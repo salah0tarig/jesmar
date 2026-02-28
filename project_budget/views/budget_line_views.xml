@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_budget_line_form_activity" model="ir.ui.view">
+        <field name="name">budget.line.form.activity</field>
+        <field name="model">budget.line</field>
+        <field name="inherit_id" ref="account_budget.view_budget_line_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group" position="inside">
+                <field name="task_id" string="Activity" options="{'no_create': True}"/>
+                <field name="budgetary_position"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_budget_line_tree_activity" model="ir.ui.view">
+        <field name="name">budget.line.tree.activity</field>
+        <field name="model">budget.line</field>
+        <field name="inherit_id" ref="account_budget.view_budget_line_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_id']" position="after">
+                <field name="task_id" string="Activity" optional="show"/>
+                <field name="budgetary_position" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Budget form inline list: add Activity and Budgetary Position -->
+    <record id="view_budget_analytic_form_lines_activity" model="ir.ui.view">
+        <field name="name">budget.analytic.form.lines.activity</field>
+        <field name="model">budget.analytic</field>
+        <field name="inherit_id" ref="account_budget.view_budget_analytic_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='account_id']" position="after">
+                <field name="task_id" string="Activity" optional="show"/>
+                <field name="budgetary_position" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

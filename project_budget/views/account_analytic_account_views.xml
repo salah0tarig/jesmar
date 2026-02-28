@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_account_analytic_account_form_budget_hierarchy" model="ir.ui.view">
+        <field name="name">account.analytic.account.form.budget.hierarchy</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_children"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-sitemap">
+                    <field name="child_count" widget="statinfo" string="Sub-Accounts"/>
+                </button>
+            </xpath>
+            <xpath expr="//group[@name='main']/group[1]" position="inside">
+                <field name="parent_id" options="{'no_create': True}"/>
+                <field name="account_level" invisible="1"/>
+                <field name="child_count" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_analytic_account_list_budget_hierarchy" model="ir.ui.view">
+        <field name="name">account.analytic.account.list.budget.hierarchy</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="parent_id" optional="show"/>
+                <field name="account_level" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_budget_analytic_form_project" model="ir.ui.view">
+        <field name="name">budget.analytic.form.project</field>
+        <field name="model">budget.analytic</field>
+        <field name="inherit_id" ref="account_budget.view_budget_analytic_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group/group[1]" position="inside">
+                <field name="project_id" options="{'no_create': True}" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

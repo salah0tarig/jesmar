@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="1">
+        <!--
+            Demo data for Project Budget (Outcome & Output) - uses Odoo analytic budget
+            Demonstrates: Project → Outcome → Output → Activity hierarchy
+        -->
+
+        <!-- Step 1: Project-level Analytic Account (top of hierarchy) -->
+        <record id="analytic_safe_water_project" model="account.analytic.account">
+            <field name="name">Safe Water Access (Project AA)</field>
+            <field name="code">SWA-PROJ</field>
+            <field name="plan_id" ref="analytic.analytic_plan_projects"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Step 2: Project linked to the analytic account -->
+        <record id="project_safe_water" model="project.project">
+            <field name="name">Safe Water Access</field>
+            <field name="description">Clean water access project - installing pumps and water systems in rural communities.</field>
+            <field name="account_id" ref="analytic_safe_water_project"/>
+            <field name="stage_id" ref="project.project_project_stage_1"/>
+            <field name="type_ids" eval="[(6, 0, [ref('project.project_stage_0'), ref('project.project_stage_1'), ref('project.project_stage_2'), ref('project.project_stage_3')])]"/>
+            <field name="date_start" eval="(DateTime.today() + relativedelta(months=-1)).strftime('%Y-%m-%d')"/>
+            <field name="date" eval="(DateTime.today() + relativedelta(months=11)).strftime('%Y-%m-%d')"/>
+        </record>
+
+        <!-- Step 3: Outcome-level Analytic Account (child of Project) -->
+        <record id="analytic_outcome_1" model="account.analytic.account">
+            <field name="name">Outcome 1 - Reduced Waterborne Diseases</field>
+            <field name="code">OUT-1</field>
+            <field name="plan_id" ref="analytic.analytic_plan_projects"/>
+            <field name="parent_id" ref="analytic_safe_water_project"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Step 4: Output-level Analytic Accounts (children of Outcome) -->
+        <record id="analytic_output_1_1" model="account.analytic.account">
+            <field name="name">Output 1.1 - Installed Clean Water Pumps</field>
+            <field name="code">OUT-1.1</field>
+            <field name="plan_id" ref="analytic.analytic_plan_projects"/>
+            <field name="parent_id" ref="analytic_outcome_1"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="analytic_output_1_2" model="account.analytic.account">
+            <field name="name">Output 1.2 - Water Quality Testing</field>
+            <field name="code">OUT-1.2</field>
+            <field name="plan_id" ref="analytic.analytic_plan_projects"/>
+            <field name="parent_id" ref="analytic_outcome_1"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Step 5: Tasks (Activities) with Outcome and Output -->
+        <record id="task_pump_installation" model="project.task">
+            <field name="name">Pump Installation</field>
+            <field name="project_id" ref="project_safe_water"/>
+            <field name="outcome_id" ref="analytic_outcome_1"/>
+            <field name="output_id" ref="analytic_output_1_1"/>
+            <field name="stage_id" ref="project.project_stage_1"/>
+        </record>
+
+        <record id="task_water_testing" model="project.task">
+            <field name="name">Water Quality Testing</field>
+            <field name="project_id" ref="project_safe_water"/>
+            <field name="outcome_id" ref="analytic_outcome_1"/>
+            <field name="output_id" ref="analytic_output_1_2"/>
+            <field name="stage_id" ref="project.project_stage_1"/>
+        </record>
+
+        <record id="task_maintenance_training" model="project.task">
+            <field name="name">Pump Maintenance Training</field>
+            <field name="project_id" ref="project_safe_water"/>
+            <field name="outcome_id" ref="analytic_outcome_1"/>
+            <field name="output_id" ref="analytic_output_1_1"/>
+            <field name="stage_id" ref="project.project_stage_0"/>
+        </record>
+
+        <!-- Step 6: Odoo Analytic Budget (budget.analytic) with Budget Lines -->
+        <record id="budget_safe_water_2025" model="budget.analytic">
+            <field name="name">Safe Water Access - FY 2025</field>
+            <field name="project_id" ref="project_safe_water"/>
+            <field name="date_from" eval="(DateTime.today() + relativedelta(month=1, day=1)).strftime('%Y-%m-%d')"/>
+            <field name="date_to" eval="(DateTime.today() + relativedelta(month=12, day=31)).strftime('%Y-%m-%d')"/>
+            <field name="budget_type">expense</field>
+            <field name="budget_line_ids">
+                <record id="budget_line_pump_materials" model="budget.line">
+                    <field name="account_id" ref="analytic_output_1_1"/>
+                    <field name="task_id" ref="task_pump_installation"/>
+                    <field name="budgetary_position">Materials</field>
+                    <field name="budget_amount">10000.00</field>
+                </record>
+                <record id="budget_line_pump_labor" model="budget.line">
+                    <field name="account_id" ref="analytic_output_1_1"/>
+                    <field name="task_id" ref="task_pump_installation"/>
+                    <field name="budgetary_position">Labor</field>
+                    <field name="budget_amount">5000.00</field>
+                </record>
+                <record id="budget_line_testing" model="budget.line">
+                    <field name="account_id" ref="analytic_output_1_2"/>
+                    <field name="task_id" ref="task_water_testing"/>
+                    <field name="budgetary_position">Equipment &amp; Supplies</field>
+                    <field name="budget_amount">3500.00</field>
+                </record>
+                <record id="budget_line_training" model="budget.line">
+                    <field name="account_id" ref="analytic_output_1_1"/>
+                    <field name="task_id" ref="task_maintenance_training"/>
+                    <field name="budgetary_position">Training</field>
+                    <field name="budget_amount">2500.00</field>
+                </record>
+            </field>
+        </record>
+
+        <!-- Confirm the budget so it appears in project -->
+        <function model="budget.analytic" name="action_budget_confirm" eval="[ref('budget_safe_water_2025')]"/>
+    </data>
+</odoo>
