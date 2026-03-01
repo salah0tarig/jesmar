@@ -41,7 +41,7 @@ Implements a hierarchical budget structure aligned with project management:
         'project_account_budget',
     ],
     'data': [
-        'security/ir.model.access.csv',
+        # 'security/ir.model.access.csv',
         'views/account_analytic_account_views.xml',
         'views/project_task_views.xml',
         'views/budget_analytic_views.xml',
