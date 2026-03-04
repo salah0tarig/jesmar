@@ -5,3 +5,4 @@ from . import project_project
 from . import project_task
 from . import budget_analytic
 from . import budget_line
+from . import budget_report

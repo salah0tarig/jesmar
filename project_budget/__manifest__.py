@@ -46,6 +46,7 @@ Implements a hierarchical budget structure aligned with project management:
         'views/project_task_views.xml',
         'views/budget_analytic_views.xml',
         'views/budget_line_views.xml',
+        'views/budget_report_views.xml',
         'views/project_project_views.xml',
     ],
     'demo': [

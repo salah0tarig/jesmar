@@ -6,8 +6,13 @@
         <field name="inherit_id" ref="account_budget.view_budget_line_form"/>
         <field name="arch" type="xml">
             <xpath expr="//group" position="inside">
+                <field name="budget_currency_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
+                <field name="outcome_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
+                <field name="output_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
                 <field name="task_id" string="Activity" options="{'no_create': True}"/>
                 <field name="budgetary_position"/>
+                <field name="achieved_in_currency" readonly="1"/>
+                <field name="balance" readonly="1"/>
             </xpath>
         </field>
     </record>
@@ -18,8 +23,16 @@
         <field name="inherit_id" ref="account_budget.view_budget_line_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='account_id']" position="after">
+                <field name="budget_display_currency_id" column_invisible="1"/>
+                <field name="company_currency_id" column_invisible="1"/>
+                <field name="budget_currency_id" optional="show"/>
+                <field name="outcome_id" optional="show"/>
+                <field name="output_id" optional="show"/>
                 <field name="task_id" string="Activity" optional="show"/>
-                <field name="budgetary_position" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='achieved_amount']" position="after">
+                <field name="achieved_in_currency" sum="Total Achieved In Currency" optional="show"/>
+                <field name="balance" sum="Total Balance" optional="show"/>
             </xpath>
         </field>
     </record>
@@ -31,8 +44,18 @@
         <field name="inherit_id" ref="account_budget.view_budget_analytic_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='account_id']" position="after">
+                <field name="budget_currency_id" optional="show"/>
+                <field name="outcome_id" optional="show"/>
+                <field name="output_id" optional="show"/>
                 <field name="task_id" string="Activity" optional="show"/>
-                <field name="budgetary_position" optional="show"/>
+            </xpath>
+            <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='achieved_amount']" position="before">
+                <field name="budget_display_currency_id" column_invisible="1"/>
+                <field name="company_currency_id" column_invisible="1"/>
+            </xpath>
+            <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='achieved_amount']" position="after">
+                <field name="achieved_in_currency" sum="Total Achieved In Currency" optional="show"/>
+                <field name="balance" sum="Total Balance" optional="show"/>
             </xpath>
         </field>
     </record>

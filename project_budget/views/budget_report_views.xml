@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- List view: add Outcome, Output, Activity -->
+    <record id="view_budget_report_tree_project_budget" model="ir.ui.view">
+        <field name="name">budget.report.tree.project.budget</field>
+        <field name="model">budget.report</field>
+        <field name="inherit_id" ref="account_budget.budget_report_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_id']" position="after">
+                <field name="outcome_id" optional="show"/>
+                <field name="output_id" optional="show"/>
+                <field name="task_id" string="Activity" optional="show"/>
+            </xpath>
+            <!-- <xpath expr="//field[@name='achieved']" position="after">
+                <field name="budget_currency_id" optional="show"/>
+                <field name="budget_display_currency_id" column_invisible="1"/>
+                <field name="achieved_in_currency" optional="show"/>
+                <field name="balance" sum="Total Balance" optional="show"/>
+            </xpath> -->
+        </field>
+    </record>
+
+    <!-- Pivot view: add Outcome, Output, Activity -->
+    <record id="view_budget_report_pivot_project_budget" model="ir.ui.view">
+        <field name="name">budget.report.pivot.project.budget</field>
+        <field name="model">budget.report</field>
+        <field name="inherit_id" ref="account_budget.budget_report_view_pivot"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_id'][@type='row']" position="after">
+                <field name="outcome_id" type="row"/>
+                <field name="output_id" type="row"/>
+                <field name="task_id" type="row"/>
+            </xpath>
+            <!-- <xpath expr="//field[@name='achieved']" position="after">
+                <field name="budget_currency_id" type="row"/>
+                <field name="achieved_in_currency" type="measure"/>
+                <field name="balance" type="measure"/>
+            </xpath> -->
+        </field>
+    </record>
+</odoo>
