@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Project Budget (Outcome & Output)',
-    'version': '19.0.1.0.0',
+    'version': '19.0.2.0.0',
     'category': 'Accounting/Accounting',
     'summary': 'Project-centric budget with Outcome/Output hierarchy and Activity-driven budget lines',
     'description': """
@@ -39,6 +39,7 @@ Implements a hierarchical budget structure aligned with project management:
         'project',
         'account_budget',
         'project_account_budget',
+        'account_budget_purchase',  # optional: provides committed_amount on budget lines
     ],
     'data': [
         # 'security/ir.model.access.csv',

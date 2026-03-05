@@ -8,6 +8,11 @@
             <xpath expr="//group/group[1]" position="inside">
                 <field name="project_id" options="{'no_create': True}" optional="show"/>
             </xpath>
+            <xpath expr="//group/group[2]" position="inside">
+                <field name="budget_currency_option" widget="radio" readonly="state != 'draft'"/>
+                <field name="company_currency_id" string="Currency" invisible="budget_currency_option != 'company'" readonly="1"/>
+                <field name="budget_currency_id" string="Currency" invisible="budget_currency_option != 'other'" readonly="state != 'draft'" options="{'no_create': True}"/>
+            </xpath>
         </field>
     </record>
 </odoo>

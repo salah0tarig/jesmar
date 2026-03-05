@@ -35,9 +35,33 @@ class BudgetReport(models.Model):
         related='budget_line_id.budget_display_currency_id',
         string='Display Currency',
     )
+    budget_amount_other = fields.Monetary(
+        related='budget_line_id.budget_amount_other',
+        string='Budgeted (Other)',
+        readonly=True,
+        currency_field='budget_display_currency_id',
+    )
+    committed_amount_other = fields.Monetary(
+        related='budget_line_id.committed_amount_other',
+        string='Committed (Other)',
+        readonly=True,
+        currency_field='budget_display_currency_id',
+    )
     achieved_in_currency = fields.Monetary(
         related='budget_line_id.achieved_in_currency',
-        string='Achieved In Currency',
+        string='Achieved (Other)',
+        readonly=True,
+        currency_field='budget_display_currency_id',
+    )
+    theoritical_amount_other = fields.Monetary(
+        related='budget_line_id.theoritical_amount_other',
+        string='Theoretical (Other)',
+        readonly=True,
+        currency_field='budget_display_currency_id',
+    )
+    balance_other = fields.Monetary(
+        related='budget_line_id.balance_other',
+        string='Balance (Other)',
         readonly=True,
         currency_field='budget_display_currency_id',
     )

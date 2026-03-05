@@ -6,13 +6,16 @@
         <field name="inherit_id" ref="account_budget.view_budget_line_form"/>
         <field name="arch" type="xml">
             <xpath expr="//group" position="inside">
-                <field name="budget_currency_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
                 <field name="outcome_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
                 <field name="output_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
                 <field name="task_id" string="Activity" options="{'no_create': True}"/>
                 <field name="budgetary_position"/>
-                <field name="achieved_in_currency" readonly="1"/>
+                <field name="budget_amount_other" invisible="not budget_currency_id" readonly="1"/>
+                <field name="committed_amount_other" invisible="not budget_currency_id" readonly="1"/>
+                <field name="achieved_in_currency" invisible="not budget_currency_id" readonly="1"/>
+                <field name="theoritical_amount_other" invisible="not budget_currency_id" readonly="1"/>
                 <field name="balance" readonly="1"/>
+                <field name="balance_other" invisible="not budget_currency_id" readonly="1"/>
             </xpath>
         </field>
     </record>
@@ -25,37 +28,55 @@
             <xpath expr="//field[@name='account_id']" position="after">
                 <field name="budget_display_currency_id" column_invisible="1"/>
                 <field name="company_currency_id" column_invisible="1"/>
-                <field name="budget_currency_id" optional="show"/>
                 <field name="outcome_id" optional="show"/>
                 <field name="output_id" optional="show"/>
                 <field name="task_id" string="Activity" optional="show"/>
+                <field name="budget_currency_id" optional="show" />
+
+            </xpath>
+            <xpath expr="//field[@name='budget_amount']" position="after">
+                <field name="budget_amount_other" sum="Total Budgeted (Other)" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='committed_amount']" position="after">
+                <field name="committed_amount_other" sum="Total Committed (Other)" optional="show"/>
             </xpath>
             <xpath expr="//field[@name='achieved_amount']" position="after">
-                <field name="achieved_in_currency" sum="Total Achieved In Currency" optional="show"/>
+                <field name="achieved_in_currency" sum="Total Achieved (Other)" optional="show"/>
+                <field name="theoritical_amount_other" sum="Total Theoretical (Other)" optional="show"/>
                 <field name="balance" sum="Total Balance" optional="show"/>
+                <field name="balance_other" sum="Total Balance (Other)" optional="show"/>
             </xpath>
         </field>
     </record>
 
-    <!-- Budget form inline list: add Activity and Budgetary Position -->
+    <!-- Budget form inline list: add Activity, Currency and Other-currency columns -->
     <record id="view_budget_analytic_form_lines_activity" model="ir.ui.view">
         <field name="name">budget.analytic.form.lines.activity</field>
         <field name="model">budget.analytic</field>
         <field name="inherit_id" ref="account_budget.view_budget_analytic_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='account_id']" position="after">
-                <field name="budget_currency_id" optional="show"/>
+                <field name="budget_display_currency_id" column_invisible="1"/>
+                <field name="company_currency_id" column_invisible="1"/>
                 <field name="outcome_id" optional="show"/>
                 <field name="output_id" optional="show"/>
                 <field name="task_id" string="Activity" optional="show"/>
+                <field name="budget_currency_id" optional="show" readonly="1"
+                    column_invisible="parent.budget_currency_option != 'other'" />
             </xpath>
-            <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='achieved_amount']" position="before">
-                <field name="budget_display_currency_id" column_invisible="1"/>
-                <field name="company_currency_id" column_invisible="1"/>
+            <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='budget_amount']" position="after">
+                <field name="budget_amount_other" sum="Total Budgeted (Other)" optional="show" readonly="1" column_invisible="parent.budget_currency_option != 'other'"/>
+            </xpath>
+            <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='committed_amount']" position="after">
+                <field name="committed_amount_other" sum="Total Committed (Other)" optional="show" readonly="1" column_invisible="parent.budget_currency_option != 'other'"/>
             </xpath>
             <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='achieved_amount']" position="after">
-                <field name="achieved_in_currency" sum="Total Achieved In Currency" optional="show"/>
+                <field name="achieved_in_currency" sum="Total Achieved (Other)" optional="show" readonly="1" column_invisible="parent.budget_currency_option != 'other'"/>
                 <field name="balance" sum="Total Balance" optional="show"/>
+                <field name="balance_other" sum="Total Balance (Other)" optional="show" readonly="1" column_invisible="parent.budget_currency_option != 'other'"/>
+            </xpath>
+            <xpath expr="//page[@name='budget_lines']/field[@name='budget_line_ids']/list/field[@name='theoritical_amount']" position="after">
+                <field name="theoritical_amount_other" sum="Total Theoretical (Other)" optional="show" readonly="1" column_invisible="parent.budget_currency_option != 'other'"/>
             </xpath>
         </field>
     </record>

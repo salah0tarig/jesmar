@@ -8,8 +8,10 @@ class BudgetLine(models.Model):
 
     budget_currency_id = fields.Many2one(
         'res.currency',
+        related='budget_analytic_id.budget_currency_id',
         string='Currency',
-        help='Optional: when set, achieved amount is converted from company currency to this currency using Odoo exchange rates.',
+        readonly=True,
+        help='Currency from the budget; when set, achieved amount is converted from company currency.',
     )
     budget_display_currency_id = fields.Many2one(
         'res.currency',
@@ -35,8 +37,8 @@ class BudgetLine(models.Model):
         'project.task',
         string='Activity',
         ondelete='set null',
-        domain="[('project_id', '=', budget_project_id)]",
-        help='Task/Activity - Analytic Account auto-fills from Output when selected',
+        domain="[('project_id', '=', budget_project_id), ('output_id', '=', output_id)]",
+        help='Task/Activity - restricted to tasks linked to the selected Output',
     )  
     budget_project_id = fields.Many2one(
         'project.project',
@@ -52,12 +54,41 @@ class BudgetLine(models.Model):
         string='Budgetary Position',
         help='e.g. Materials, Labor, Equipment',
     )
-    achieved_in_currency = fields.Monetary(
-        string='Achieved In Currency',
-        compute='_compute_achieved_in_currency',
+    # --- Other-currency amounts: pure conversion of base fields, no base logic changes ---
+    budget_amount_other = fields.Monetary(
+        string='Budgeted (Other)',
+        compute='_compute_amounts_other_currency',
         store=True,
         currency_field='budget_display_currency_id',
-        help='Achieved amount. When Currency is set, converted from company currency using Odoo exchange rate.',
+        help='Budgeted amount converted to the budget currency.',
+    )
+    committed_amount_other = fields.Monetary(
+        string='Committed (Other)',
+        compute='_compute_amounts_other_currency',
+        store=False,
+        currency_field='budget_display_currency_id',
+        help='Committed amount converted to the budget currency. Always fresh from purchase/invoice data.',
+    )
+    achieved_in_currency = fields.Monetary(
+        string='Achieved (Other)',
+        compute='_compute_amounts_other_currency',
+        store=False,
+        currency_field='budget_display_currency_id',
+        help='Achieved amount converted to the budget currency. Always fresh from purchase/invoice data.',
+    )
+    theoritical_amount_other = fields.Monetary(
+        string='Theoretical (Other)',
+        compute='_compute_amounts_other_currency',
+        store=True,
+        currency_field='budget_display_currency_id',
+        help='Theoretical amount converted to the budget currency.',
+    )
+    balance_other = fields.Monetary(
+        string='Balance (Other)',
+        compute='_compute_amounts_other_currency',
+        store=False,
+        currency_field='budget_display_currency_id',
+        help='Balance (Budgeted - Achieved) converted to the budget currency. Always fresh.',
     )
     balance = fields.Monetary(
         string='Balance',
@@ -80,42 +111,70 @@ class BudgetLine(models.Model):
                 or (line.company_id or self.env.company).currency_id
             )
 
-    @api.depends('budget_currency_id', 'company_id', 'date_to', 'budget_analytic_state')
-    def _compute_achieved_in_currency(self):
-        """When budget_currency_id is set, convert achieved amount from company currency."""
+    def _convert_to_other_currency(self, line, amount):
+        """Convert amount from company currency to budget currency. Returns amount as-is when no conversion needed."""
+        if not amount:
+            return 0.0
+        company_currency = (line.company_id or self.env.company).currency_id
+        if not line.budget_currency_id or line.budget_currency_id == company_currency:
+            return amount
+        conv_date = line.date_to or fields.Date.context_today(self)
+        return company_currency._convert(
+            from_amount=amount,
+            to_currency=line.budget_currency_id,
+            company=line.company_id or self.env.company,
+            date=conv_date,
+        )
+
+    @api.depends(
+        'budget_amount', 'achieved_amount', 'theoritical_amount', 'committed_amount', 'balance',
+        'budget_currency_id', 'company_id', 'date_to', 'budget_analytic_state'
+    )
+    def _compute_amounts_other_currency(self):
+        """Convert base amounts to other currency. Uses base fields only, no logic override."""
         if not self:
             return
-        # Read achieved directly from budget.report to avoid stale achieved_amount when state changes
-        grouped = dict(self.env['budget.report']._read_group(
-            domain=[('budget_line_id', 'in', self.ids)],
-            groupby=['budget_line_id'],
-            aggregates=['achieved:sum'],
-        ))
+        # Read committed/achieved directly from budget.report so we get fresh purchase data
+        # (committed_amount is non-stored; reading here ensures we react to PO changes)
+        grouped = {
+            line: (committed, achieved)
+            for line, committed, achieved in self.env['budget.report']._read_group(
+                domain=[('budget_line_id', 'in', self.ids)],
+                groupby=['budget_line_id'],
+                aggregates=['committed:sum', 'achieved:sum'],
+            )
+        }
         for line in self:
-            achieved = grouped.get(line, 0.0)
-            company_currency = (line.company_id or self.env.company).currency_id
-            if line.budget_currency_id and line.budget_currency_id != company_currency:
-                conv_date = line.date_to or fields.Date.context_today(self)
-                line.achieved_in_currency = company_currency._convert(
-                    from_amount=achieved,
-                    to_currency=line.budget_currency_id,
-                    company=line.company_id or self.env.company,
-                    date=conv_date,
-                )
-            else:
-                line.achieved_in_currency = achieved
+            committed, achieved = grouped.get(line, (0.0, 0.0))
+            line.budget_amount_other = line._convert_to_other_currency(line, line.budget_amount)
+            line.achieved_in_currency = line._convert_to_other_currency(line, achieved)
+            line.theoritical_amount_other = line._convert_to_other_currency(line, line.theoritical_amount)
+            line.committed_amount_other = line._convert_to_other_currency(line, committed)
+            line.balance_other = line._convert_to_other_currency(line, (line.budget_amount or 0.0) - achieved)
 
     @api.depends('budget_amount', 'achieved_amount')
     def _compute_balance(self):
         for line in self:
             line.balance = (line.budget_amount or 0.0) - (line.achieved_amount or 0.0)
 
+    @api.model
+    def default_get(self, fields_list):
+        defaults = super().default_get(fields_list)
+        budget_analytic_id = self.env.context.get('default_budget_analytic_id') or defaults.get('budget_analytic_id')
+        if budget_analytic_id and (not fields_list or 'account_id' in fields_list):
+            budget_analytic = self.env['budget.analytic'].browse(budget_analytic_id)
+            if budget_analytic.project_id and budget_analytic.project_id.account_id:
+                defaults['account_id'] = budget_analytic.project_id.account_id.id
+        return defaults
+
     @api.onchange('budget_analytic_id', 'budget_project_id')
     def _onchange_project_clear_outcome_output(self):
-        """When budget/project changes, clear outcome and output (different hierarchy)."""
+        """When budget/project changes, clear outcome and output; set account_id from project."""
         if self.budget_project_id or self.budget_analytic_id:
             self.outcome_id = False
             self.output_id = False
+            if self.project_account_id:
+                self.account_id = self.project_account_id
 
     @api.onchange('outcome_id')
     def _onchange_outcome_clear_output(self):
@@ -123,13 +182,17 @@ class BudgetLine(models.Model):
         if self.outcome_id:
             self.output_id = False
 
-    @api.onchange('outcome_id', 'output_id')
+    @api.onchange('outcome_id', 'output_id', 'budget_project_id')
     def _onchange_outcome_output_set_account(self):
-        """When outcome or output is set, update account_id for allocation."""
-        if self.output_id:
-            self.account_id = self.output_id
-        elif self.outcome_id:
-            self.account_id = self.outcome_id
+        """Set account_id from the project in the budget for allocation."""
+        if self.project_account_id:
+            self.account_id = self.project_account_id
+
+    @api.onchange('output_id')
+    def _onchange_output_clear_task(self):
+        """When output changes, clear task if it no longer matches the new output."""
+        if self.output_id and self.task_id and self.task_id.output_id != self.output_id:
+            self.task_id = False
 
     @api.onchange('task_id')
     def _onchange_task_id(self):
@@ -137,11 +200,6 @@ class BudgetLine(models.Model):
         if self.task_id:
             self.outcome_id = self.task_id.outcome_id
             self.output_id = self.task_id.output_id
-            account = (
-                self.task_id.output_id
-                or self.task_id.outcome_id
-                or (self.task_id.project_id.account_id if self.task_id.project_id else False)
-            )
-            if account:
-                self.account_id = account
+            if self.project_account_id:
+                self.account_id = self.project_account_id
 
