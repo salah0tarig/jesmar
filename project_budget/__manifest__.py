@@ -37,6 +37,8 @@ Implements a hierarchical budget structure aligned with project management:
         'account',
         'analytic',
         'project',
+        'purchase',
+        'project_purchase',  # provides project_id on purchase.order
         'account_budget',
         'project_account_budget',
         'account_budget_purchase',  # optional: provides committed_amount on budget lines
@@ -49,6 +51,7 @@ Implements a hierarchical budget structure aligned with project management:
         'views/budget_line_views.xml',
         'views/budget_report_views.xml',
         'views/project_project_views.xml',
+        'views/purchase_order_line_views.xml',
     ],
     'demo': [
         'data/project_budget_demo.xml',

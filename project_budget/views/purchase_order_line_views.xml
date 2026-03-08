@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Ensure project_id is visible on purchase order form (project_purchase adds it after origin) -->
+    <record id="view_purchase_order_form_project_budget" model="ir.ui.view">
+        <field name="name">purchase.order.form.project.budget</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="project_purchase.view_order_form_inherit_project_purchase"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='project_id']" position="attributes">
+                <attribute name="options">{"no_create": True}</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add Activity field to purchase order line list - activities filtered by PO's project -->
+    <record id="view_purchase_order_form_activity" model="ir.ui.view">
+        <field name="name">purchase.order.form.activity</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="before">
+                <field name="activity_id" optional="show"
+                       groups="analytic.group_analytic_accounting"
+                       options="{'no_create': True}"
+                       domain="[('project_id', '=', parent.project_id), ('output_id', '!=', False)]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add Activity field to purchase order line form (dialog) - activities from order's project -->
+    <record id="view_purchase_order_line_form_activity" model="ir.ui.view">
+        <field name="name">purchase.order.line.form.activity</field>
+        <field name="model">purchase.order.line</field>
+        <field name="inherit_id" ref="purchase.purchase_order_line_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="before">
+                <field name="activity_id" groups="analytic.group_analytic_accounting"
+                       options="{'no_create': True}"
+                       domain="[('project_id', '=', order_id.project_id), ('output_id', '!=', False)]"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
