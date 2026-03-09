@@ -167,6 +167,19 @@ class BudgetLine(models.Model):
                 defaults['account_id'] = budget_analytic.project_id.account_id.id
         return defaults
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            output_id = vals.get('output_id')
+            if output_id and 'account_id' not in vals:
+                vals['account_id'] = output_id
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if 'output_id' in vals and vals.get('output_id') and 'account_id' not in vals:
+            vals['account_id'] = vals['output_id']
+        return super().write(vals)
+
     @api.onchange('budget_analytic_id', 'budget_project_id')
     def _onchange_project_clear_outcome_output(self):
         """When budget/project changes, clear outcome and output; set account_id from project."""
@@ -184,8 +197,14 @@ class BudgetLine(models.Model):
 
     @api.onchange('outcome_id', 'output_id', 'budget_project_id')
     def _onchange_outcome_output_set_account(self):
-        """Set account_id from the project in the budget for allocation."""
-        if self.project_account_id:
+        """Set account_id (analytic plan) for budget matching.
+        Must use output_id when set, so PO/bill lines with activity_id match this budget line.
+        Committed = uninvoiced PO amount; Achieved = invoiced/billed amount."""
+        if self.output_id:
+            self.account_id = self.output_id
+        elif self.outcome_id:
+            self.account_id = self.outcome_id
+        elif self.project_account_id:
             self.account_id = self.project_account_id
 
     @api.onchange('output_id')
@@ -196,10 +215,14 @@ class BudgetLine(models.Model):
 
     @api.onchange('task_id')
     def _onchange_task_id(self):
-        """When Activity (Task) is selected, auto-fill Outcome, Output and Analytic Account."""
+        """When Activity (Task) is selected, auto-fill Outcome, Output and Analytic Account.
+        account_id must = output_id so PO/bill lines (with activity's output in analytic_distribution)
+        match this budget line for committed/achieved amounts."""
         if self.task_id:
             self.outcome_id = self.task_id.outcome_id
             self.output_id = self.task_id.output_id
-            if self.project_account_id:
+            if self.output_id:
+                self.account_id = self.output_id
+            elif self.project_account_id:
                 self.account_id = self.project_account_id
 

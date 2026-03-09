@@ -1,10 +1,36 @@
 # -*- coding: utf-8 -*-
 
 from odoo import fields, models
+from odoo.tools import SQL
 
 
 class BudgetReport(models.Model):
     _inherit = 'budget.report'
+
+    def _get_pol_query(self, plan_fnames):
+        """Override to filter by activity: when budget line has task_id, only match PO lines with that activity."""
+        query = super()._get_pol_query(plan_fnames)
+        return SQL(
+            query.code + " AND (bl.task_id IS NULL OR pol.activity_id = bl.task_id)",
+            *query.params
+        )
+
+    def _get_aal_query(self, plan_fnames):
+        """Override to filter by activity: when budget line has task_id, only match analytic lines from bills with that activity."""
+        query = super()._get_aal_query(plan_fnames)
+        # Add JOINs for aml/pol so we can filter by activity. Insert before the bl join.
+        from_clause = "FROM account_analytic_line aal\n         LEFT JOIN account_move_line aml ON aal.move_line_id = aml.id\n         LEFT JOIN purchase_order_line pol ON aml.purchase_line_id = pol.id\n         LEFT JOIN budget_line bl"
+        orig_from = "FROM account_analytic_line aal\n         LEFT JOIN budget_line bl"
+        new_code = query.code.replace(orig_from, from_clause)
+        # Add activity filter to the bl ON condition (before LEFT JOIN account_account)
+        # The bl join ends before "LEFT JOIN account_account". We add our condition before that.
+        activity_cond = " AND (bl.task_id IS NULL OR (pol.id IS NOT NULL AND pol.activity_id = bl.task_id))"
+        # Insert before "LEFT JOIN account_account"
+        new_code = new_code.replace(
+            "LEFT JOIN account_account aa ON aa.id = aal.general_account_id",
+            activity_cond + "\n         LEFT JOIN account_account aa ON aa.id = aal.general_account_id"
+        )
+        return SQL(new_code, *query.params)
 
     outcome_id = fields.Many2one(
         'account.analytic.account',
