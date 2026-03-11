@@ -19,7 +19,7 @@ class PurchaseOrderLine(models.Model):
         # Lines with activity: use activity analytic account (or output as fallback) at 100%
         def _get_analytic_account(line):
             act = line.activity_id
-            return act.activity_analytic_account_id or act.output_id
+            return act.activity_analytic_account_id
 
         lines_with_activity = self.filtered(lambda l: l.activity_id and _get_analytic_account(l))
         for line in lines_with_activity:
@@ -31,17 +31,38 @@ class PurchaseOrderLine(models.Model):
         if lines_without:
             super(PurchaseOrderLine, lines_without)._compute_analytic_distribution()
 
-    @api.depends('analytic_distribution', 'activity_id', 'product_id')
+    @api.depends('analytic_distribution', 'activity_id', 'product_id', 'order_id.date_order', 'product_qty', 'qty_received')
     def _compute_budget_line_ids(self):
-        """Override to filter budget lines by activity and product when both are set."""
-        super()._compute_budget_line_ids()
-        for line in self:
-            if line.activity_id and line.product_id and line.budget_line_ids:
-                # Filter to budget lines matching activity and (no product or same product)
-                line.budget_line_ids = line.budget_line_ids.filtered(
-                    lambda bl: (not bl.task_id or bl.task_id == line.activity_id)
-                    and (not bl.product_id or bl.product_id == line.product_id)
-                )
+        """Override: when activity+product set, search budget lines directly; else use base logic and filter."""
+        lines_direct = self.filtered(lambda l: l.activity_id and l.product_id and l.order_id and (l.product_qty or 0) - (l.qty_received or 0) > 0)
+        lines_base = self - lines_direct
+        # Direct search for lines with activity+product
+        for line in lines_direct:
+            acc = line.activity_id.activity_analytic_account_id or line.activity_id.output_id
+            if not acc:
+                line.budget_line_ids = self.env['budget.line']
+                continue
+            # Match: (task=our activity) OR (no task and account=our analytic)
+            domain = [
+                '|', ('task_id', '=', line.activity_id.id), '&', ('task_id', '=', False), ('account_id', '=', acc.id),
+                ('budget_analytic_id.budget_type', '!=', 'revenue'),
+                ('budget_analytic_id.state', 'in', ['confirmed', 'done']),
+                ('date_from', '<=', line.order_id.date_order),
+                ('date_to', '>=', line.order_id.date_order),
+                '|', ('product_id', '=', False), ('product_id', '=', line.product_id.id),
+            ]
+            if line.company_id:
+                domain.extend(['|', ('company_id', '=', False), ('company_id', '=', line.company_id.id)])
+            line.budget_line_ids = self.sudo().env['budget.line'].search(domain)
+        # Base logic for other lines
+        if lines_base:
+            super(PurchaseOrderLine, lines_base)._compute_budget_line_ids()
+            for line in lines_base:
+                if line.activity_id and line.product_id and line.budget_line_ids:
+                    line.budget_line_ids = line.budget_line_ids.filtered(
+                        lambda bl, al=line: (not bl.task_id or bl.task_id == al.activity_id)
+                        and (not bl.product_id or bl.product_id == al.product_id)
+                    )
 
     def write(self, vals):
         res = super().write(vals)
@@ -54,15 +75,22 @@ class PurchaseOrderLine(models.Model):
     def _check_budget_remaining(self):
         """Block PO line if subtotal exceeds remaining budget for activity+product."""
         for line in self:
-            if not line.activity_id or not line.product_id or not line.budget_line_ids:
+            if not line.activity_id or not line.product_id or not line.order_id:
                 continue
-            # Recompute to get fresh budget amounts
-            line.budget_line_ids.invalidate_recordset(['committed_amount', 'achieved_amount', 'balance'])
-            uncommitted = line.price_unit * (line.product_qty - line.qty_invoiced) if line.order_id.state != 'purchase' else line.price_subtotal
+            # Ensure budget_line_ids is computed (uses our direct search when activity+product set)
+            if not line.budget_line_ids:
+                continue
+            # Invalidate so committed/achieved recompute on next read
+            line.budget_line_ids.invalidate_recordset(['committed_amount', 'achieved_amount', 'committed_percentage', 'achieved_percentage'])
+            # Uncommitted = this line's amount that would add to committed (uninvoiced portion)
+            uncommitted = (
+                line.price_unit * (line.product_qty - line.qty_invoiced)
+                if line.order_id.state != 'purchase'
+                else (line.price_subtotal or 0)
+            )
             if uncommitted <= 0:
                 continue
             for budget in line.budget_line_ids:
-                # Remaining = budgeted - achieved - committed
                 remaining = (budget.budget_amount or 0) - budget.achieved_amount - (budget.committed_amount or 0)
                 if uncommitted > remaining:
                     currency = budget.budget_display_currency_id or line.currency_id
