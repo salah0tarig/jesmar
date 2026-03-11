@@ -9,6 +9,7 @@
                 <field name="outcome_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
                 <field name="output_id" options="{'no_create': True}" readonly="budget_analytic_state != 'draft'"/>
                 <field name="task_id" string="Activity" options="{'no_create': True}"/>
+                <field name="product_id" options="{'no_create': True}"/>
                 <field name="budgetary_position"/>
                 <field name="budget_amount_other" invisible="not budget_currency_id" readonly="1"/>
                 <field name="committed_amount_other" invisible="not budget_currency_id" readonly="1"/>
@@ -31,6 +32,7 @@
                 <field name="outcome_id" optional="show"/>
                 <field name="output_id" optional="show"/>
                 <field name="task_id" string="Activity" optional="show"/>
+                <field name="product_id" optional="show"/>
                 <field name="budget_currency_id" optional="show" />
 
             </xpath>
@@ -61,6 +63,7 @@
                 <field name="outcome_id" optional="show"/>
                 <field name="output_id" optional="show"/>
                 <field name="task_id" string="Activity" optional="show"/>
+                <field name="product_id" optional="show"/>
                 <field name="budget_currency_id" optional="show" readonly="1"
                     column_invisible="parent.budget_currency_option != 'other'" />
             </xpath>

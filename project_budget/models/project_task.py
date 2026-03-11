@@ -13,6 +13,12 @@ class ProjectTask(models.Model):
         domain="[('parent_id', '=', parent_account_id or False)]",
         help='Outcome analytic account (parent must be project)',
     )
+    activity_analytic_account_id = fields.Many2one(
+        'account.analytic.account',
+        string='Activity Analytic Account',
+        domain="[('parent_id', '=', output_id or False)]",
+        help='Analytic account for this activity; options are children of the selected Output',
+    )
     output_id = fields.Many2one(
         'account.analytic.account',
         string='Output',
@@ -55,8 +61,24 @@ class ProjectTask(models.Model):
         if self.project_id:
             self.outcome_id = False
             self.output_id = False
+            self.activity_analytic_account_id = False
 
     @api.onchange('outcome_id')
     def _onchange_outcome_clear_output(self):
         if self.outcome_id:
             self.output_id = False
+            self.activity_analytic_account_id = False
+
+    @api.onchange('output_id')
+    def _onchange_output_clear_activity_analytic(self):
+        """When Output changes, clear Activity Analytic Account (domain/options change)."""
+        if self.output_id:
+            self.activity_analytic_account_id = False
+
+    @api.onchange('activity_analytic_account_id')
+    def _onchange_activity_analytic_sync_output(self):
+        """When Activity Analytic Account is set, ensure Output (and Outcome) are its ancestors."""
+        if self.activity_analytic_account_id and self.activity_analytic_account_id.parent_id:
+            self.output_id = self.activity_analytic_account_id.parent_id
+            if self.output_id.parent_id:
+                self.outcome_id = self.output_id.parent_id

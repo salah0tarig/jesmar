@@ -11,7 +11,8 @@ class BudgetReport(models.Model):
         """Override to filter by activity: when budget line has task_id, only match PO lines with that activity."""
         query = super()._get_pol_query(plan_fnames)
         return SQL(
-            query.code + " AND (bl.task_id IS NULL OR pol.activity_id = bl.task_id)",
+            query.code + " AND (bl.task_id IS NULL OR pol.activity_id = bl.task_id)"
+            + " AND (bl.product_id IS NULL OR pol.product_id = bl.product_id)",
             *query.params
         )
 

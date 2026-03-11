@@ -9,6 +9,8 @@
                 <field name="parent_account_id" invisible="1"/>
                 <field name="outcome_id" options="{'no_create': True}"/>
                 <field name="output_id" options="{'no_create': True}"/>
+                <field name="activity_analytic_account_id" options="{'no_create': True}"
+                       string="Activity Analytic Account"/>
             </xpath>
         </field>
     </record>
