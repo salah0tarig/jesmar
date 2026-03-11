@@ -73,34 +73,35 @@ class PurchaseOrderLine(models.Model):
 
     @api.constrains('activity_id', 'product_id', 'price_subtotal', 'product_qty', 'price_unit', 'order_id')
     def _check_budget_remaining(self):
-        """Block PO line if subtotal exceeds remaining budget for activity+product."""
+        """Restrict when (balance + requested amount) would exceed budget. Balance = budget - achieved - committed."""
         for line in self:
             if not line.activity_id or not line.product_id or not line.order_id:
                 continue
-            # Ensure budget_line_ids is computed (uses our direct search when activity+product set)
             if not line.budget_line_ids:
                 continue
             # Invalidate so committed/achieved recompute on next read
-            line.budget_line_ids.invalidate_recordset(['committed_amount', 'achieved_amount', 'committed_percentage', 'achieved_percentage'])
-            # Uncommitted = this line's amount that would add to committed (uninvoiced portion)
-            uncommitted = (
+            line.budget_line_ids.invalidate_recordset(['committed_amount', 'achieved_amount', 'committed_percentage', 'achieved_percentage', 'balance'])
+            # Requested amount = this line's uninvoiced value that would add to committed
+            requested = (
                 line.price_unit * (line.product_qty - line.qty_invoiced)
                 if line.order_id.state != 'purchase'
                 else (line.price_subtotal or 0)
             )
-            if uncommitted <= 0:
+            if requested <= 0:
                 continue
             for budget in line.budget_line_ids:
-                remaining = (budget.budget_amount or 0) - budget.achieved_amount - (budget.committed_amount or 0)
-                if uncommitted > remaining:
+                # Balance = remaining = budget - achieved - committed (what's left for new requests)
+                balance = (budget.budget_amount or 0) - (budget.achieved_amount or 0) - (budget.committed_amount or 0)
+                # Restrict when requested > balance (request exceeds what's available)
+                if requested > balance:
                     currency = budget.budget_display_currency_id or line.currency_id
                     raise ValidationError(_(
                         "Budget exceeded for Activity '%(activity)s' and Product '%(product)s'. "
-                        "Remaining budget: %(remaining).2f %(currency)s. Line amount: %(amount).2f %(currency)s."
+                        "Available balance: %(balance).2f %(currency)s. Requested amount: %(requested).2f %(currency)s."
                     ) % {
                         'activity': line.activity_id.name,
                         'product': line.product_id.name,
-                        'remaining': remaining,
-                        'amount': uncommitted,
+                        'balance': balance,
+                        'requested': requested,
                         'currency': currency.name,
                     })

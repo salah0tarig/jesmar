@@ -44,7 +44,8 @@ Implements a hierarchical budget structure aligned with project management:
         'account_budget_purchase',  # optional: provides committed_amount on budget lines
     ],
     'data': [
-        # 'security/ir.model.access.csv',
+        'security/ir.model.access.csv',
+        'wizard/task_assign_outcome_output_wizard_views.xml',
         'views/account_analytic_account_views.xml',
         'views/project_task_views.xml',
         'views/budget_analytic_views.xml',

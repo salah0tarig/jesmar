@@ -1,1 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_task_assign_outcome_output_wizard,project.task.assign.outcome.output.wizard,project_budget.model_project_task_assign_outcome_output_wizard,base.group_user,1,1,1,1

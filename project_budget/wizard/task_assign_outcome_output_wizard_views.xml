@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_task_assign_outcome_output_wizard_form" model="ir.ui.view">
+        <field name="name">project.task.assign.outcome.output.wizard.form</field>
+        <field name="model">project.task.assign.outcome.output.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Assign Outcome, Output and Activity Analytic">
+                <sheet>
+                    <group>
+                        <group string="Selection">
+                            <field name="project_id" readonly="1"/>
+                            <field name="task_ids" nolabel="1" widget="many2many_tags"
+                                   options="{'no_create': True}"
+                                   domain="[('project_id', '=', project_id)]"/>
+                            <field name="parent_account_id" invisible="1"/>
+                        </group>
+                        <group string="Assign to Selected Tasks">
+                            <field name="outcome_id" options="{'no_create': True}"/>
+                            <field name="output_id" options="{'no_create': True}"/>
+                            <field name="activity_analytic_account_id" options="{'no_create': True}"
+                                   string="Activity Analytic Account"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_apply" string="Apply" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_task_assign_outcome_output" model="ir.actions.act_window">
+        <field name="name">Assign Outcome / Output / Activity Analytic</field>
+        <field name="res_model">project.task.assign.outcome.output.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="project.model_project_task"/>
+        <field name="binding_view_types">list,kanban,form</field>
+    </record>
+
+
+
+</odoo>

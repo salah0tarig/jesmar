@@ -310,9 +310,6 @@ class BudgetLine(models.Model):
         if self.task_id:
             self.outcome_id = self.task_id.outcome_id
             self.output_id = self.task_id.output_id
-            acc = self._get_account_id_for_budget_line(task_id=self.task_id.id)
-            if acc:
-                self.account_id = self.env['account.analytic.account'].browse(acc)
 
     @api.onchange('output_id')
     def _onchange_output_clear_task_set_account(self):
