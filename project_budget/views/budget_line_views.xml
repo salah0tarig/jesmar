@@ -48,8 +48,27 @@
                 <field name="balance" sum="Total Balance" optional="show"/>
                 <field name="balance_other" sum="Total Balance (Other)" optional="show"/>
             </xpath>
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-danger">achieved_amount > budget_amount</attribute>
+            </xpath>
         </field>
     </record>
+
+    <!-- Read-only list: same as tree.activity but create=false, delete=false, edit=false -->
+    <record id="view_budget_line_tree_readonly" model="ir.ui.view">
+        <field name="name">budget.line.tree.readonly</field>
+        <field name="model">budget.line</field>
+        <field name="inherit_id" ref="project_budget.view_budget_line_tree_activity"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="create">false</attribute>
+                <attribute name="delete">false</attribute>
+                <attribute name="edit">false</attribute>
+            </xpath>
+        </field>
+    </record>
+
+   
 
     <!-- Budget form inline list: add Activity, Currency and Other-currency columns -->
     <record id="view_budget_analytic_form_lines_activity" model="ir.ui.view">
@@ -83,4 +102,84 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Search: add group by account_id, outcome_id, output_id, task_id, product_id -->
+    <record id="view_budget_line_search_project" model="ir.ui.view">
+        <field name="name">budget.line.search.project</field>
+        <field name="model">budget.line</field>
+        <field name="inherit_id" ref="account_budget.view_budget_line_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='filter_not_cancelled']" position="after">
+                <filter string="Open" name="filter_open_budget" domain="[('budget_analytic_id.state', '=', 'confirmed')]" help="Open (confirmed) budgets"/>
+            </xpath>
+            <xpath expr="//field[@name='account_id']" position="after">
+                <field name="outcome_id"/>
+                <field name="output_id"/>
+                <field name="task_id"/>
+                <field name="product_id"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Outcome" name="group_outcome_id" context="{'group_by': 'outcome_id'}"/>
+                <filter string="Output" name="group_output_id" context="{'group_by': 'output_id'}"/>
+                <filter string="Activity" name="group_task_id" context="{'group_by': 'task_id'}"/>
+                <filter string="Product" name="group_product_id" context="{'group_by': 'product_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Pivot: add outcome_id, output_id, task_id, product_id (like budget report) -->
+    <record id="view_budget_line_pivot_project" model="ir.ui.view">
+        <field name="name">budget.line.pivot.project</field>
+        <field name="model">budget.line</field>
+        <field name="inherit_id" ref="account_budget.view_budget_line_pivot"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='budget_analytic_id']" position="after">
+                <field name="account_id" type="row"/>
+                <field name="outcome_id" type="row"/>
+                <field name="output_id" type="row"/>
+                <field name="task_id" type="row"/>
+                <field name="product_id" type="row"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Graph: add outcome_id, output_id, task_id, product_id (like budget report) -->
+    <record id="view_budget_line_graph_project" model="ir.ui.view">
+        <field name="name">budget.line.graph.project</field>
+        <field name="model">budget.line</field>
+        <field name="inherit_id" ref="account_budget.view_budget_line_graph"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='budget_analytic_id']" position="after">
+                <field name="account_id" type="row"/>
+                <field name="outcome_id" type="row"/>
+                <field name="output_id" type="row"/>
+                <field name="task_id" type="row"/>
+                <field name="product_id" type="row"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Action for Budget Lines Analysis (list, pivot, graph) -->
+    <record id="action_budget_lines_analysis" model="ir.actions.act_window">
+        <field name="name">Budget Lines Analysis</field>
+        <field name="res_model">budget.line</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="context">{'search_default_filter_open_budget': 1}</field>
+        <field name="search_view_id" ref="project_budget.view_budget_line_search_project"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No budget lines found.
+            </p>
+            <p>
+                Budget lines are created from the Budget form. Use the pivot and graph views to analyze budget by Account, Outcome, Output, Activity, or Product.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu under Analytic Budget -->
+    <menuitem id="menu_budget_lines_analysis"
+        name="Budget Lines Analysis"
+        parent="account.account_transactions_menu"
+        action="action_budget_lines_analysis"
+        sequence="55" />
 </odoo>

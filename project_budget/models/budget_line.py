@@ -8,24 +8,27 @@ class BudgetLine(models.Model):
 
     @api.depends('account_id', 'task_id', 'task_id.activity_analytic_account_id', 'product_id', 'date_from', 'date_to', 'company_id', 'budget_analytic_id', 'budget_analytic_id.budget_type')
     def _compute_all(self):
-        """Override: achieved from account.analytic.line (our logic); committed from budget.report (POL) or direct from POL."""
-        # Committed from budget.report (PO lines)
+        """Same as account_budget_purchase: single read_group from budget.report.
+        Fallback to direct compute when report returns 0 (project hierarchy plan matching can fail)."""
         grouped = {
-            line: committed
-            for line, committed in self.env['budget.report']._read_group(
+            line: (committed, achieved)
+            for line, committed, achieved in self.env['budget.report']._read_group(
                 domain=[('budget_line_id', 'in', self.ids)],
                 groupby=['budget_line_id'],
-                aggregates=['committed:sum'],
+                aggregates=['committed:sum', 'achieved:sum'],
             )
         }
         for line in self:
-            committed = grouped.get(line, 0.0)
-            # Use direct POL computation when we have task+activity_analytic (same logic as achieved) - report often fails for project hierarchy
-            if line.task_id and line.task_id.activity_analytic_account_id and line.date_from and line.date_to:
+            committed, achieved = grouped.get(line, (0.0, 0.0))
+            # Fallback when report returns 0: direct compute (plan matching fails for activity hierarchy)
+            if not committed and line.task_id and line.task_id.activity_analytic_account_id and line.date_from and line.date_to:
                 committed = line._compute_committed_from_pol()
             elif not committed and line.account_id and line.date_from and line.date_to:
                 committed = line._compute_committed_from_pol()
-            achieved = line._compute_achieved_from_analytic()
+            if not achieved and line.task_id and line.task_id.activity_analytic_account_id and line.date_from and line.date_to:
+                achieved = line._compute_achieved_from_analytic()
+            elif not achieved and line.account_id and line.date_from and line.date_to:
+                achieved = line._compute_achieved_from_analytic()
             line.committed_amount = committed
             line.achieved_amount = achieved
             line.committed_percentage = line.budget_amount and (committed / line.budget_amount)
@@ -33,22 +36,23 @@ class BudgetLine(models.Model):
             line._compute_balance()
 
     def _compute_achieved_from_analytic(self):
-        """Sum achieved from account.analytic.line matching this budget line.
-        Match: activity_analytic_account_id (exact) + product_id (exact) to separate same product across activities."""
+        """Fallback: sum achieved from account.analytic.line. Uses activity_analytic_account_id or account_id (same as report)."""
         self.ensure_one()
         if not self.date_from or not self.date_to:
+            return 0.0
+        analytic_account = (
+            (self.task_id.activity_analytic_account_id if self.task_id else False)
+            or self.account_id
+        )
+        if not analytic_account:
             return 0.0
         domain = [
             ('date', '>=', self.date_from),
             ('date', '<=', self.date_to),
             ('company_id', '=', self.company_id.id) if self.company_id else ('company_id', '=', False),
+            ('account_id', '=', analytic_account.id),
         ]
-        # Analytic account: exact match on activity_analytic_account_id (no parent_of - same product can exist per activity)
-        analytic_account = self.task_id.activity_analytic_account_id if self.task_id else False
-        if not analytic_account:
-            return 0.0
-        domain.append(('account_id', '=', analytic_account.id))
-        # Product: exact match when set - same product with different activity_analytic_account_id must not mix
+        # Product: when set, match to avoid mixing same product across activities
         if self.product_id:
             domain.append('|')
             domain.append(('product_id', '=', self.product_id.id))
@@ -64,13 +68,14 @@ class BudgetLine(models.Model):
         return sum(aal.amount * sign for aal in aal_records)
 
     def _compute_committed_from_pol(self):
-        """Sum uninvoiced amounts from confirmed PO lines matching this budget line.
-        Uses activity_analytic_account_id (same as achieved) when task is set."""
+        """Fallback: sum uninvoiced amounts from confirmed PO lines. Uses activity_id or account in analytic."""
         self.ensure_one()
         if not self.date_from or not self.date_to:
             return 0.0
-        # Same analytic logic as achieved: require activity_analytic_account_id when we have task
-        analytic_account = self.task_id.activity_analytic_account_id if self.task_id else False
+        analytic_account = (
+            (self.task_id.activity_analytic_account_id if self.task_id else False)
+            or self.account_id
+        )
         if not analytic_account:
             return 0.0
         budget_type = (self.budget_analytic_id or self.env['budget.analytic']).budget_type
@@ -248,20 +253,11 @@ class BudgetLine(models.Model):
         'budget_currency_id', 'company_id', 'date_to', 'budget_analytic_state'
     )
     def _compute_amounts_other_currency(self):
-        """Convert base amounts to other currency. Uses our achieved_amount and committed from report."""
+        """Convert base amounts to other currency. Uses our achieved_amount and committed_amount (from our direct POL compute)."""
         if not self:
             return
-        # Committed still from budget.report (PO lines); achieved uses our _compute_all result
-        grouped = {
-            line: committed
-            for line, committed in self.env['budget.report']._read_group(
-                domain=[('budget_line_id', 'in', self.ids)],
-                groupby=['budget_line_id'],
-                aggregates=['committed:sum'],
-            )
-        }
         for line in self:
-            committed = grouped.get(line, 0.0)
+            committed = line.committed_amount  # From our _compute_all (direct POL when task+activity)
             achieved = line.achieved_amount  # From our _compute_achieved_from_analytic
             line.budget_amount_other = line._convert_to_other_currency(line, line.budget_amount)
             line.achieved_in_currency = line._convert_to_other_currency(line, achieved)
@@ -369,6 +365,8 @@ class BudgetLine(models.Model):
         if self.task_id:
             self.outcome_id = self.task_id.outcome_id
             self.output_id = self.task_id.output_id
+            acc = self.task_id.activity_analytic_account_id or self.task_id.output_id
+            self.account_id = acc if acc else False
 
     @api.onchange('output_id')
     def _onchange_output_clear_task_set_account(self):
