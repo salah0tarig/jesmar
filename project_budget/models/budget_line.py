@@ -8,7 +8,7 @@ class BudgetLine(models.Model):
 
     @api.depends('account_id', 'task_id', 'task_id.activity_analytic_account_id', 'product_id', 'date_from', 'date_to', 'company_id', 'budget_analytic_id', 'budget_analytic_id.budget_type')
     def _compute_all(self):
-        """Override: achieved from account.analytic.line (our logic); committed from budget.report (POL)."""
+        """Override: achieved from account.analytic.line (our logic); committed from budget.report (POL) or direct from POL."""
         # Committed from budget.report (PO lines)
         grouped = {
             line: committed
@@ -20,6 +20,11 @@ class BudgetLine(models.Model):
         }
         for line in self:
             committed = grouped.get(line, 0.0)
+            # Use direct POL computation when we have task+activity_analytic (same logic as achieved) - report often fails for project hierarchy
+            if line.task_id and line.task_id.activity_analytic_account_id and line.date_from and line.date_to:
+                committed = line._compute_committed_from_pol()
+            elif not committed and line.account_id and line.date_from and line.date_to:
+                committed = line._compute_committed_from_pol()
             achieved = line._compute_achieved_from_analytic()
             line.committed_amount = committed
             line.achieved_amount = achieved
@@ -57,6 +62,60 @@ class BudgetLine(models.Model):
         aal_records = self.env['account.analytic.line'].search(domain)
         sign = -1 if budget_type == 'expense' else 1
         return sum(aal.amount * sign for aal in aal_records)
+
+    def _compute_committed_from_pol(self):
+        """Sum uninvoiced amounts from confirmed PO lines matching this budget line.
+        Uses activity_analytic_account_id (same as achieved) when task is set."""
+        self.ensure_one()
+        if not self.date_from or not self.date_to:
+            return 0.0
+        # Same analytic logic as achieved: require activity_analytic_account_id when we have task
+        analytic_account = self.task_id.activity_analytic_account_id if self.task_id else False
+        if not analytic_account:
+            return 0.0
+        budget_type = (self.budget_analytic_id or self.env['budget.analytic']).budget_type
+        if budget_type == 'revenue':
+            return 0.0
+        sign = -1 if budget_type == 'both' else 1
+        # Find POL: order in purchase, date in range, match activity when task set
+        pol_domain = [
+            ('order_id.state', '=', 'purchase'),
+            ('order_id.date_order', '>=', self.date_from),
+            ('order_id.date_order', '<=', self.date_to),
+        ]
+        if self.company_id:
+            pol_domain.append(('company_id', '=', self.company_id.id))
+        if self.product_id:
+            pol_domain.append(('product_id', '=', self.product_id.id))
+        if self.task_id:
+            pol_domain.append(('activity_id', '=', self.task_id.id))
+        pols = self.env['purchase.order.line'].search(pol_domain)
+        if not self.task_id:
+            # No task: filter by analytic_distribution containing our account_id
+            pols = pols.filtered(
+                lambda p: p.analytic_distribution and str(analytic_account.id) in (p.analytic_distribution or {})
+            )
+        total = 0.0
+        for pol in pols:
+            uninvoiced_qty = pol.product_qty - pol.qty_invoiced
+            if uninvoiced_qty <= 0:
+                continue
+            # Match by activity_analytic_account_id (same as achieved) - analytic must contain it
+            dist = pol.analytic_distribution or {}
+            if str(analytic_account.id) not in dist:
+                continue
+            line_total = pol.price_subtotal or pol.price_unit * pol.product_qty
+            price_per_unit = line_total / (pol.product_qty or 1)
+            amount_currency = price_per_unit * uninvoiced_qty
+            company_currency = self.company_id.currency_id if self.company_id else self.env.company.currency_id
+            if pol.currency_id != company_currency:
+                amount_currency = pol.currency_id._convert(
+                    amount_currency, company_currency,
+                    pol.order_id.company_id or self.env.company,
+                    pol.order_id.date_order or fields.Date.today(),
+                )
+            total += amount_currency * sign
+        return total
 
     budget_currency_id = fields.Many2one(
         'res.currency',
