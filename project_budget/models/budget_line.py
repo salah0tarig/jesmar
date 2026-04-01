@@ -358,15 +358,15 @@ class BudgetLine(models.Model):
             if acc and line.account_id.id != acc:
                 line.account_id = acc
 
-    @api.onchange('task_id')
-    def _onchange_task_id_set_account(self):
-        """When Activity is selected, set Outcome, Output and account_id from task.
-        account_id must = activity_analytic_account_id so PO lines with this activity match for committed/achieved."""
-        if self.task_id:
-            self.outcome_id = self.task_id.outcome_id
-            self.output_id = self.task_id.output_id
-            acc = self.task_id.activity_analytic_account_id or self.task_id.output_id
-            self.account_id = acc if acc else False
+    # @api.onchange('task_id')
+    # def _onchange_task_id_set_account(self):
+    #     """When Activity is selected, set Outcome, Output and account_id from task.
+    #     account_id must = activity_analytic_account_id so PO lines with this activity match for committed/achieved."""
+    #     if self.task_id:
+    #         self.outcome_id = self.task_id.outcome_id
+    #         self.output_id = self.task_id.output_id
+    #         acc = self.task_id.activity_analytic_account_id or self.task_id.output_id
+    #         self.account_id = acc if acc else False
 
     @api.onchange('output_id')
     def _onchange_output_clear_task_set_account(self):
