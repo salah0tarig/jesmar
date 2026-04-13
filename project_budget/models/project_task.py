@@ -13,6 +13,7 @@ class ProjectTask(models.Model):
         domain="[('parent_id', '=', parent_account_id or False)]",
         help='Outcome analytic account (parent must be project)',
     )
+    
     activity_analytic_account_id = fields.Many2one(
         'account.analytic.account',
         string='Activity Analytic Account',
@@ -82,3 +83,54 @@ class ProjectTask(models.Model):
             self.output_id = self.activity_analytic_account_id.parent_id
             if self.output_id.parent_id:
                 self.outcome_id = self.output_id.parent_id
+
+    def _prepare_activity_analytic_account_vals(self):
+        """Build values for the auto-created activity analytic account."""
+        self.ensure_one()
+        output = self.output_id
+        plan = self._get_activity_analytic_plan(output)
+        if not plan:
+            raise ValidationError(_(
+                'No Analytic Plan found to create the Activity Analytic Account. '
+                'Please configure an Analytic Plan first.'
+            ))
+        return {
+            'name': self.name or _('Activity'),
+            'parent_id': output.id,
+            'plan_id': plan.id,
+            'company_id': output.company_id.id,
+        }
+
+    def _get_activity_analytic_plan(self, output):
+        """Resolve a valid analytic plan for auto-created activity accounts."""
+        self.ensure_one()
+        plan = (
+            output.plan_id
+            or output.parent_id.plan_id
+            or self.parent_account_id.plan_id
+            or self.project_id.account_id.plan_id
+        )
+        if plan:
+            return plan
+        company = output.company_id or self.company_id or self.env.company
+        plan = self.env['account.analytic.plan'].search(
+            [('company_id', 'in', [company.id, False])],
+            limit=1,
+        )
+        if not plan:
+            plan = self.env['account.analytic.plan'].search([], limit=1)
+        return plan
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        tasks = super().create(vals_list)
+        for task, vals in zip(tasks, vals_list):
+            # Auto-create activity analytic account only when task is created with an output
+            # and no explicit activity analytic account was provided.
+            if vals.get('activity_analytic_account_id'):
+                continue
+            analytic_account = self.env['account.analytic.account'].create(
+                task._prepare_activity_analytic_account_vals()
+            )
+            task.activity_analytic_account_id = analytic_account
+        return tasks
