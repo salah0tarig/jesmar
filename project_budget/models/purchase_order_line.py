@@ -105,3 +105,78 @@ class PurchaseOrderLine(models.Model):
                         'requested': requested,
                         'currency': currency.name,
                     })
+
+    @api.constrains('activity_id', 'product_id', 'order_id', 'order_id.date_order', 'company_id')
+    def _check_activity_product_matches_budget_line(self):
+        """When Activity is set on POL, enforce same Product exists in matching budget line."""
+        BudgetLine = self.env['budget.line'].sudo()
+        for line in self:
+            if not line.activity_id or not line.product_id or not line.order_id:
+                continue
+
+            acc = line.activity_id.activity_analytic_account_id
+            if not acc:
+                raise ValidationError(_(
+                    "Activity '%(activity)s' has no Activity Analytic Account. "
+                    "Set it before selecting a product on purchase lines."
+                ) % {'activity': line.activity_id.display_name})
+
+            # Strict product match on budget line for this activity/account and period.
+            domain = [
+                '|', ('task_id', '=', line.activity_id.id), '&', ('task_id', '=', False), ('account_id', '=', acc.id),
+                ('budget_analytic_id.budget_type', '!=', 'revenue'),
+                ('budget_analytic_id.state', 'in', ['confirmed', 'done']),
+                ('date_from', '<=', line.order_id.date_order),
+                ('date_to', '>=', line.order_id.date_order),
+                ('product_id', '=', line.product_id.id),
+            ]
+            if line.company_id:
+                domain.extend(['|', ('company_id', '=', False), ('company_id', '=', line.company_id.id)])
+
+            has_match = bool(BudgetLine.search_count(domain))
+            if not has_match:
+                raise ValidationError(_(
+                    "Product '%(product)s' is not budgeted for Activity '%(activity)s'. "
+                    "Please use the same product as defined on the budget line."
+                ) % {
+                    'product': line.product_id.display_name,
+                    'activity': line.activity_id.display_name,
+                })
+
+    @api.onchange('activity_id', 'product_id')
+    def _onchange_activity_product_matches_budget_line(self):
+        """Give immediate warning in UI when product is not budgeted for selected activity."""
+        BudgetLine = self.env['budget.line'].sudo()
+        for line in self:
+            if not line.activity_id or not line.product_id or not line.order_id:
+                continue
+            acc = line.activity_id.activity_analytic_account_id
+            if not acc:
+                continue
+            domain = [
+                '|', ('task_id', '=', line.activity_id.id), '&', ('task_id', '=', False), ('account_id', '=', acc.id),
+                ('budget_analytic_id.budget_type', '!=', 'revenue'),
+                ('budget_analytic_id.state', 'in', ['confirmed', 'done']),
+                ('date_from', '<=', line.order_id.date_order),
+                ('date_to', '>=', line.order_id.date_order),
+                ('product_id', '=', line.product_id.id),
+            ]
+            if line.company_id:
+                domain.extend(['|', ('company_id', '=', False), ('company_id', '=', line.company_id.id)])
+            if BudgetLine.search_count(domain):
+                continue
+            bad_product = line.product_id.display_name
+            bad_activity = line.activity_id.display_name
+            line.product_id = False
+            return {
+                'warning': {
+                    'title': _('Product Not Budgeted'),
+                    'message': _(
+                        "Product '%(product)s' is not budgeted for Activity '%(activity)s'. "
+                        "Please select a product that exists in budget lines for this activity."
+                    ) % {
+                        'product': bad_product,
+                        'activity': bad_activity,
+                    },
+                }
+            }

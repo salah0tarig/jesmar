@@ -87,7 +87,7 @@ class ProjectTask(models.Model):
     def _prepare_activity_analytic_account_vals(self):
         """Build values for the auto-created activity analytic account."""
         self.ensure_one()
-        output = self.output_id
+        output = self.output_id or self.project_id.account_id
         plan = self._get_activity_analytic_plan(output)
         if not plan:
             raise ValidationError(_(
