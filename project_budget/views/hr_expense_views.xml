@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="hr_expense_view_form_project_budget_mission" model="ir.ui.view">
+            <field name="name">hr.expense.form.project.budget.mission</field>
+            <field name="model">hr.expense</field>
+            <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//label[@for='product_id']/following-sibling::div[1]" position="after">
+                    <label for="mission_start_date"/>
+                    <div class="o_row">
+                        <field name="mission_start_date" class="oe_inline me-2"/>
+                        <span class="mx-1">to</span>
+                        <field name="mission_end_date" class="oe_inline"/>
+                    </div>
+                    <field name="mission_destination"/>
+                    <field name="mission_purpose"/>
+                </xpath>
+                <xpath expr="//field[@name='analytic_distribution']" position="after">
+                    <field name="budget_id" readonly="state != 'budget_owner'" groups="project_budget.group_budget_owner,account.group_account_manager"/>
+                    <field name="budget_line_id" readonly="state != 'budget_owner'" groups="project_budget.group_budget_owner,account.group_account_manager"/>
+                    <field name="budget_remaining_amount" readonly="1" groups="project_budget.group_budget_owner,account.group_account_manager"/>
+                    <field name="budget_state" widget="badge"
+                           decoration-success="budget_state == 'in_budget'"
+                           decoration-danger="budget_state == 'budget_exceed'"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="hr_expense_view_form_project_budget_budget_owner" model="ir.ui.view">
+            <field name="name">hr.expense.form.project.budget.owner</field>
+            <field name="model">hr.expense</field>
+            <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//button[@name='action_submit']" position="after">
+                    <button name="action_budget_owner_approve" string="Budget Owner Approve" type="object"
+                            class="oe_highlight" invisible="state != 'budget_owner'" groups="project_budget.group_budget_owner"/>
+                    <button name="action_budget_owner_reject" string="Reject" type="object"
+                            invisible="state != 'budget_owner'" groups="project_budget.group_budget_owner"/>
+                </xpath>
+                <field name="state" position="attributes">
+                    <attribute name="statusbar_visible">
+                        draft,submitted,budget_owner,approved,posted,paid</attribute>
+                </field>
+                
+            </field>
+        </record>
+    </data>
+</odoo>

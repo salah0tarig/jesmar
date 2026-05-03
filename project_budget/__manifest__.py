@@ -37,6 +37,7 @@ Implements a hierarchical budget structure aligned with project management:
         'account',
         'analytic',
         'project',
+        'hr_expense',
         'purchase',
         'project_purchase',  # provides project_id on purchase.order
         'account_budget',
@@ -44,6 +45,7 @@ Implements a hierarchical budget structure aligned with project management:
         'account_budget_purchase',  # optional: provides committed_amount on budget lines
     ],
     'data': [
+        'security/security.xml',
         'security/ir.model.access.csv',
         'wizard/task_assign_outcome_output_wizard_views.xml',
         'views/account_analytic_account_views.xml',
@@ -53,6 +55,7 @@ Implements a hierarchical budget structure aligned with project management:
         'views/budget_report_views.xml',
         'views/project_project_views.xml',
         'views/purchase_order_line_views.xml',
+        'views/hr_expense_views.xml',
     ],
     'demo': [
         'data/project_budget_demo.xml',
