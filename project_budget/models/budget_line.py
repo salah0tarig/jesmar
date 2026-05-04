@@ -5,6 +5,7 @@ from odoo import api, fields, models
 
 class BudgetLine(models.Model):
     _inherit = 'budget.line'
+    _rec_name = 'product_id'
 
     @api.depends('account_id', 'task_id', 'task_id.activity_analytic_account_id', 'product_id', 'date_from', 'date_to', 'company_id', 'budget_analytic_id', 'budget_analytic_id.budget_type')
     def _compute_all(self):
