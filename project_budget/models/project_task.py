@@ -104,22 +104,26 @@ class ProjectTask(models.Model):
     def _get_activity_analytic_plan(self, output):
         """Resolve a valid analytic plan for auto-created activity accounts."""
         self.ensure_one()
-        plan = (
-            output.plan_id
-            or output.parent_id.plan_id
-            or self.parent_account_id.plan_id
-            or self.project_id.account_id.plan_id
-        )
+        plan = False
+        if output:
+            plan = (
+                output.plan_id
+                or output.parent_id.plan_id
+                or self.parent_account_id.plan_id
+                or (self.project_id.account_id.plan_id if self.project_id.account_id else False)
+            )
+        else:
+            plan = self.parent_account_id.plan_id or (
+                self.project_id.account_id.plan_id if self.project_id and self.project_id.account_id else False
+            )
         if plan:
             return plan
-        company = output.company_id or self.company_id or self.env.company
-        plan = self.env['account.analytic.plan'].search(
-            [('company_id', 'in', [company.id, False])],
+        # account.analytic.plan has no company_id in current Odoo (analytic redesign); resolve by order.
+        return self.env['account.analytic.plan'].search(
+            [],
             limit=1,
+            order='sequence asc, id',
         )
-        if not plan:
-            plan = self.env['account.analytic.plan'].search([], limit=1)
-        return plan
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -128,6 +132,8 @@ class ProjectTask(models.Model):
             # Auto-create activity analytic account only when task is created with an output
             # and no explicit activity analytic account was provided.
             if vals.get('activity_analytic_account_id'):
+                continue
+            if not (task.output_id or (task.project_id and task.project_id.account_id)):
                 continue
             analytic_account = self.env['account.analytic.account'].create(
                 task._prepare_activity_analytic_account_vals()

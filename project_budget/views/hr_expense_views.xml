@@ -44,11 +44,6 @@
                     <button name="action_budget_owner_reject" string="Reject" type="object"
                             invisible="state != 'budget_owner'" groups="project_budget.group_budget_owner"/>
                 </xpath>
-
-                <xpath expr="//button[@name='action_post']" position="attributes">
-                    <attribute name="groups">project_budget.group_finance,project_budget.group_cashier</attribute>
-                </xpath>
-
                 <field name="state" position="attributes">
                     <attribute name="statusbar_visible">
                         draft,submitted,budget_owner,approved,posted,paid</attribute>
