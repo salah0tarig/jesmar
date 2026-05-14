@@ -41,7 +41,9 @@ class BudgetReport(models.Model):
         )
         orig_from = "FROM account_analytic_line aal\n         LEFT JOIN budget_line bl"
         new_code = query.code.replace(orig_from, from_clause)
-        product_cond = " AND (bl.product_id IS NULL OR aml.product_id = bl.product_id)"
+        product_cond = (
+            " AND (bl.product_id IS NULL OR COALESCE(aml.product_id, aal.product_id) = bl.product_id)"
+        )
         new_code = new_code.replace(
             "LEFT JOIN account_account aa ON aa.id = aal.general_account_id",
             product_cond + "\n         LEFT JOIN account_account aa ON aa.id = aal.general_account_id"
