@@ -80,15 +80,91 @@ class HrExpense(models.Model):
     def _onchange_budget_line_id(self):
         if self.budget_line_id:
             self.budget_id = self.budget_line_id.budget_analytic_id
+            acc = self.budget_line_id.task_id.activity_analytic_account_id
+            if acc:
+                self.analytic_distribution = {str(acc.id): 100}
+        else:
+            self.analytic_distribution = False
 
-    @api.depends("budget_line_id", "total_amount_currency")
+    @api.depends(
+        "product_id",
+        "account_id",
+        "employee_id",
+        "budget_line_id",
+        "budget_line_id.task_id",
+        "budget_line_id.task_id.activity_analytic_account_id",
+    )
+    def _compute_analytic_distribution(self):
+        """Budget line activity analytic account at 100%; otherwise default distribution rules."""
+        with_budget_analytic = self.filtered(
+            lambda e: e.budget_line_id
+            and e.budget_line_id.task_id
+            and e.budget_line_id.task_id.activity_analytic_account_id
+        )
+        for expense in with_budget_analytic:
+            acc = expense.budget_line_id.task_id.activity_analytic_account_id
+            expense.analytic_distribution = {str(acc.id): 100}
+        super(HrExpense, self - with_budget_analytic)._compute_analytic_distribution()
+
+    def _expense_amount_in_company_currency(self):
+        """Amount to compare against budget line (company currency)."""
+        self.ensure_one()
+        company_currency = self.company_currency_id or self.env.company.currency_id
+        if self.currency_id and self.currency_id != company_currency:
+            return self.currency_id._convert(
+                self.total_amount_currency or 0.0,
+                company_currency,
+                self.company_id or self.env.company,
+                self.date or fields.Date.context_today(self),
+            )
+        return self.total_amount or self.total_amount_currency or 0.0
+
+    def _budget_line_remaining(self, budget_line):
+        """Read budget line balance after refreshing achieved/committed (balance formula unchanged)."""
+        budget_line.invalidate_recordset(
+            ["committed_amount", "achieved_amount", "committed_percentage", "achieved_percentage", "balance"]
+        )
+        budget_line._compute_all()
+        return budget_line.balance or 0.0
+
+    @api.depends(
+        "budget_line_id",
+        "total_amount",
+        "total_amount_currency",
+        "currency_id",
+        "company_currency_id",
+        "date",
+        "company_id",
+    )
     def _compute_budget_check_fields(self):
         for rec in self:
-            required_amount = rec.total_amount_currency or 0.0
             if rec.budget_line_id:
-                remaining = rec.budget_line_id.balance or 0.0
+                remaining = rec._budget_line_remaining(rec.budget_line_id)
+                required_amount = rec._expense_amount_in_company_currency()
                 rec.budget_remaining_amount = remaining
-                rec.budget_state = "budget_exceed" if required_amount > remaining else "in_budget"
+                rec.budget_state = (
+                    "budget_exceed" if required_amount > remaining else "in_budget"
+                )
+            else:
+                rec.budget_remaining_amount = 0.0
+                rec.budget_state = False
+
+    @api.onchange(
+        "budget_line_id",
+        "total_amount",
+        "total_amount_currency",
+        "currency_id",
+    )
+    def _onchange_budget_check_fields(self):
+        """Refresh budget remaining in the form when line or amount changes."""
+        for rec in self:
+            if rec.budget_line_id:
+                remaining = rec._budget_line_remaining(rec.budget_line_id)
+                required_amount = rec._expense_amount_in_company_currency()
+                rec.budget_remaining_amount = remaining
+                rec.budget_state = (
+                    "budget_exceed" if required_amount > remaining else "in_budget"
+                )
             else:
                 rec.budget_remaining_amount = 0.0
                 rec.budget_state = False
@@ -120,7 +196,7 @@ class HrExpense(models.Model):
                     "Budget Owner cannot approve until amount is within remaining budget.",
                     line=self.budget_line_id.display_name,
                     remaining=self.budget_remaining_amount,
-                    amount=(self.total_amount_currency or 0.0),
+                    amount=self._expense_amount_in_company_currency(),
                 )
             )
         self.sudo()._validate_distribution(
