@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_job_form_inherit_subsistence" model="ir.ui.view">
+        <field name="name">hr.job.form.inherit.subsistence</field>
+        <field name="model">hr.job</field>
+        <field name="inherit_id" ref="hr.view_hr_job_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="after">
+                <group string="Subsistence Allowance">
+                    <field name="subsistence_allowance_type"/>
+                    <field name="fixed_subsistence_amount"
+                           invisible="subsistence_allowance_type != 'fixed'"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_department_form_inherit_subsistence" model="ir.ui.view">
+        <field name="name">hr.department.form.inherit.subsistence</field>
+        <field name="model">hr.department</field>
+        <field name="inherit_id" ref="hr.view_department_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@col='12']" position="after">
+                <group string="Subsistence Allowance">
+                    <field name="subsistence_allowance_type"/>
+                    <field name="fixed_subsistence_amount"
+                           invisible="subsistence_allowance_type != 'fixed'"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

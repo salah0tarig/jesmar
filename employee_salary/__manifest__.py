@@ -12,35 +12,33 @@ This module helps in managing employee salary details in a simple and flexible w
 Main Features:
 --------------
 - Manage basic salary
+- Configure subsistence allowance rules on job positions and departments
+- Auto-fill fixed subsistence allowance on payslips from employee job/department
+- Auto-calculate daily subsistence from project timesheets in the payslip period
 
 Use Case:
 ---------
 Useful for small and medium companies that need a lightweight salary system
 without full payroll complexity.
-
-Future Improvements:
---------------------
-
-- Integration with HR and Accounting modules
     """,
 
     'author': "My Company",
     'website': "https://www.yourcompany.com",
 
     'category': 'Human Resources',
-    'version': '19.0.0',
+    'version': '19.0.1.2.3',
 
-    # dependencies
-    'depends': ['base', 'hr'],
+    'depends': ['base', 'hr', 'hr_hourly_cost', 'hr_payroll', 'hr_timesheet'],
 
-    # data files
     'data': [
         'views/employee_views_inherit.xml',
+        'views/hr_job_department_views.xml',
+        'views/hr_payslip_views.xml',
+        'data/payroll_subsistence_data.xml',
     ],
 
-    # demo data
-    'demo': [
-    ],
+    'post_init_hook': 'post_init_hook',
+    'uninstall_hook': 'uninstall_hook',
 
     'installable': True,
     'application': True,

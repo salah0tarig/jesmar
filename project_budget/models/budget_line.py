@@ -143,6 +143,7 @@ class BudgetLine(models.Model):
         domain="[('parent_id', '=', project_account_id or account_id or False)]",
         help='Outcome analytic account (parent must be project account)',
     )
+    
     output_id = fields.Many2one(
         'account.analytic.account',
         string='Output',
