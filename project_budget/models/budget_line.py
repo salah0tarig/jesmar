@@ -155,7 +155,7 @@ class BudgetLine(models.Model):
         'project.task',
         string='Activity',
         ondelete='set null',
-        domain="[('project_id', '=', budget_project_id)]",
+        domain="[('project_id', '=', budget_project_id), ('output_id', '=', output_id)]",
         help='Task/Activity - restricted to tasks linked to the selected Output',
     )
     # domain="[('project_id', '=', budget_project_id), ('output_id', '=', output_id)]",
