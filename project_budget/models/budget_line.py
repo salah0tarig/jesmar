@@ -315,8 +315,8 @@ class BudgetLine(models.Model):
                     outcome_id=vals.get('outcome_id'),
                     project_account_id=proj_acc,
                 )
-                if acc:
-                    vals['account_id'] = acc
+                # if acc:
+                #     vals['account_id'] = acc
         return super().create(vals_list)
 
     def write(self, vals):
@@ -336,8 +336,8 @@ class BudgetLine(models.Model):
                 outcome_id=outcome_id,
                 project_account_id=proj_acc,
             )
-            if acc:
-                vals['account_id'] = acc
+            # if acc:
+            #     vals['account_id'] = acc
         return super().write(vals)
 
     @api.onchange('budget_analytic_id', 'budget_project_id')
