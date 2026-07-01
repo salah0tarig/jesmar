@@ -170,6 +170,7 @@ class BudgetLine(models.Model):
         'project.project',
         related='budget_analytic_id.project_id',
         string='Budget Project',
+        store=True,
     )
     project_account_id = fields.Many2one(
         'account.analytic.account',
