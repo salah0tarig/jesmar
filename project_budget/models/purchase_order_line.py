@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models, _
+from odoo.addons.project_purchase.models.purchase_order_line import PurchaseOrderLine as PurchaseOrderLineProjectPurchase
 from odoo.exceptions import ValidationError
 
 
@@ -14,22 +15,38 @@ class PurchaseOrderLine(models.Model):
              'Removing the activity clears the analytic distribution.',
     )
 
-    @api.depends('product_id', 'order_id.partner_id', 'activity_id', 'activity_id.activity_analytic_account_id', 'activity_id.output_id')
+    @api.depends('product_id', 'order_id.partner_id', 'activity_id', 'activity_id.activity_analytic_account_id')
     def _compute_analytic_distribution(self):
-        # Lines with activity: use activity analytic account (or output as fallback) at 100%
-        def _get_analytic_account(line):
-            act = line.activity_id
-            return act.activity_analytic_account_id
-
-        lines_with_activity = self.filtered(lambda l: l.activity_id and _get_analytic_account(l))
+        """Task-level analytic only when Activity is set; do not auto-fill project analytic."""
+        lines_with_activity = self.filtered(
+            lambda l: l.activity_id and l.activity_id.activity_analytic_account_id
+        )
         for line in lines_with_activity:
-            acc = _get_analytic_account(line)
+            acc = line.activity_id.activity_analytic_account_id
             line.analytic_distribution = {str(acc.id): 100}
 
-        # Other lines: use default (product/partner-based) computation
-        lines_without = self - lines_with_activity
-        if lines_without:
-            super(PurchaseOrderLine, lines_without)._compute_analytic_distribution()
+        lines_activity_no_account = self.filtered(
+            lambda l: l.activity_id and not l.activity_id.activity_analytic_account_id
+        )
+        for line in lines_activity_no_account:
+            line.analytic_distribution = False
+
+        lines_without_activity = self - lines_with_activity - lines_activity_no_account
+        if lines_without_activity:
+            # Skip project_purchase auto-fill (project analytic); keep product/partner models only.
+            for line in lines_without_activity:
+                if not line.display_type:
+                    line.analytic_distribution = False
+            super(PurchaseOrderLineProjectPurchase, lines_without_activity)._compute_analytic_distribution()
+
+    @api.onchange('activity_id')
+    def _onchange_activity_id_analytic_distribution(self):
+        if self.activity_id and self.activity_id.activity_analytic_account_id:
+            self.analytic_distribution = {
+                str(self.activity_id.activity_analytic_account_id.id): 100,
+            }
+        elif not self.activity_id:
+            self.analytic_distribution = False
 
     @api.depends('analytic_distribution', 'activity_id', 'product_id', 'order_id.date_order', 'product_qty', 'qty_received')
     def _compute_budget_line_ids(self):
