@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Project Budget (Outcome & Output)',
-    'version': '19.0.2.0.1',
+    'version': '19.0.2.0.6',
     'category': 'Accounting/Accounting',
     'summary': 'Project-centric budget with Outcome/Output hierarchy and Activity-driven budget lines',
     'description': """
@@ -14,6 +14,8 @@ Implements a hierarchical budget structure aligned with project management:
 - **Project** (top): Project's analytic account
 - **Outcome** (child): Analytic account with parent = Project AA
 - **Output** (child): Analytic account with parent = Outcome
+- **Activity** (child): Analytic account with parent = Output (task activity)
+- List view shows indented Project → Outcome → Output → Activity order
 
 **Task/Activity Enhancement:**
 - Add Outcome and Output fields on Tasks

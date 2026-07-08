@@ -15,21 +15,69 @@
             </xpath>
             <xpath expr="//group[@name='main']/group[1]" position="inside">
                 <field name="parent_id" options="{'no_create': True}"/>
-                <field name="account_level" invisible="1"/>
+                <field name="account_level"/>
                 <field name="child_count" invisible="1"/>
             </xpath>
         </field>
     </record>
 
+    <!-- List organised as Project → Outcome → Output → Activity (by parent_path) -->
     <record id="view_account_analytic_account_list_budget_hierarchy" model="ir.ui.view">
         <field name="name">account.analytic.account.list.budget.hierarchy</field>
         <field name="model">account.analytic.account</field>
         <field name="inherit_id" ref="analytic.view_account_analytic_account_list"/>
         <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="default_order">parent_path,name,id</attribute>
+            </xpath>
             <xpath expr="//field[@name='name']" position="before">
-                <field name="parent_id" optional="show"/>
-                <field name="account_level" optional="show"/>
+                <field name="parent_path" column_invisible="1"/>
+                <field name="account_level" optional="show"
+                         decoration-info="account_level == 'project'"
+                         decoration-success="account_level == 'outcome'"
+                         decoration-warning="account_level == 'output'"
+                         decoration-muted="account_level == 'activity'"
+                         widget="badge"/>
+                <field name="parent_id" optional="hide"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="hierarchy_name" string="Account"/>
             </xpath>
         </field>
+    </record>
+
+    <record id="view_account_analytic_account_search_budget_hierarchy" model="ir.ui.view">
+        <field name="name">account.analytic.account.search.budget.hierarchy</field>
+        <field name="model">account.analytic.account</field>
+        <field name="inherit_id" ref="analytic.view_account_analytic_account_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <separator/>
+                <filter string="Project" name="level_project" domain="[('account_level', '=', 'project')]"/>
+                <filter string="Outcome" name="level_outcome" domain="[('account_level', '=', 'outcome')]"/>
+                <filter string="Output" name="level_output" domain="[('account_level', '=', 'output')]"/>
+                <filter string="Activity" name="level_activity" domain="[('account_level', '=', 'activity')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Level" name="groupby_account_level" domain="[]"
+                        context="{'group_by': 'account_level'}"/>
+                <filter string="Parent" name="groupby_parent" domain="[]"
+                        context="{'group_by': 'parent_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Drop hierarchy card view; list is the default -->
+    <record id="analytic.action_account_analytic_account_form" model="ir.actions.act_window">
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+    </record>
+
+    <record id="analytic.action_analytic_account_form" model="ir.actions.act_window">
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_active': 1}</field>
     </record>
 </odoo>

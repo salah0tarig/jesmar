@@ -57,6 +57,15 @@ class ProjectTask(models.Model):
                         'Output must have selected Outcome as parent.'
                     ))
 
+    @api.constrains('activity_analytic_account_id', 'output_id')
+    def _check_activity_parent(self):
+        for task in self:
+            if task.activity_analytic_account_id and task.output_id:
+                if task.activity_analytic_account_id.parent_id != task.output_id:
+                    raise ValidationError(_(
+                        'Activity Analytic Account must have selected Output as parent.'
+                    ))
+
     @api.onchange('project_id')
     def _onchange_project_clear_outcome_output(self):
         if self.project_id:
