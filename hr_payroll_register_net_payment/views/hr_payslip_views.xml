@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_payslip_tree_register_payment" model="ir.ui.view">
+        <field name="name">hr.payslip.list.register.payment</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/header/button[@name='action_payslip_paid']" position="after">
+                <button
+                    string="Pay"
+                    name="action_register_payment"
+                    type="object"
+                    class="oe_highlight"
+                    groups="account.group_account_invoice"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_hr_payslip_register_payment_server" model="ir.actions.server">
+        <field name="name">Pay</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip"/>
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[(4, ref('account.group_account_invoice'))]"/>
+        <field name="state">code</field>
+        <field name="code">action = records.action_register_payment()</field>
+    </record>
+</odoo>
