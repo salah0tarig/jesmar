@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Payroll: register NET salary payment only",
-    "version": "19.0.1.2.1",
+    "version": "19.0.1.3.4",
     "category": "Human Resources/Payroll",
     "summary": "Payslip Pay button opens payment wizard on NET payable lines only",
     "depends": ["hr_payroll_account"],

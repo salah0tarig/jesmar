@@ -1,5 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <delete model="ir.ui.view" id="view_hr_payslip_form_create_post_journal"/>
+
+    <record id="action_hr_payslip_create_post_journal_server" model="ir.actions.server">
+        <field name="name">Create &amp; Post Journal Entry</field>
+        <field name="model_id" ref="hr_payroll.model_hr_payslip"/>
+        <field name="binding_model_id" ref="hr_payroll.model_hr_payslip"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="group_ids" eval="[(4, ref('account.group_account_invoice'))]"/>
+        <field name="state">code</field>
+        <field name="code"><![CDATA[
+if not records:
+    raise UserError("Please select at least one payslip.")
+invalid = records.filtered(lambda slip: slip.state in ("paid", "cancel"))
+if invalid:
+    raise UserError(
+        "Cannot create or post journal entries for payslips that are paid or cancelled: %s"
+        % ", ".join(invalid.mapped("display_name"))
+    )
+drafts = records.filtered(lambda slip: slip.state == "draft")
+if drafts:
+    uncomputed = drafts.filtered(lambda slip: not slip.line_ids)
+    if uncomputed:
+        raise UserError(
+            "Compute the payslip before creating journal entries: %s"
+            % ", ".join(uncomputed.mapped("display_name"))
+        )
+    drafts.action_payslip_done()
+without_move = records.filtered(lambda slip: slip.state == "validated" and not slip.move_id)
+if without_move:
+    without_move.filtered("journal_id")._action_create_account_move()
+still_without_move = records.filtered(lambda slip: slip.state == "validated" and not slip.move_id)
+if still_without_move:
+    raise UserError(
+        "No journal entry could be created for: %s"
+        % ", ".join(still_without_move.mapped("display_name"))
+    )
+cancelled_moves = records.filtered(lambda slip: slip.move_id.state == "cancel")
+if cancelled_moves:
+    raise UserError(
+        "The journal entry is cancelled for: %s"
+        % ", ".join(cancelled_moves.mapped("display_name"))
+    )
+draft_moves = records.move_id.filtered(lambda move: move.state == "draft")
+if draft_moves:
+    draft_moves.action_post()
+        ]]></field>
+    </record>
+
     <record id="view_hr_payslip_tree_register_payment" model="ir.ui.view">
         <field name="name">hr.payslip.list.register.payment</field>
         <field name="model">hr.payslip</field>
