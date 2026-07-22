@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_payment_voucher_document">
+        <t t-call="web.external_layout">
+            <t t-set="o" t-value="o.with_context(lang=lang)"/>
+            <t t-set="values" t-value="o._get_payment_voucher_report_values()"/>
+            <div class="page o_voucher_custom">
+                <style>
+                    .o_voucher_custom {
+                        font-size: inherit;
+                        color: #333;
+                        margin-top: 0;
+                    }
+                    .o_voucher_custom .o_vc-main-title {
+                        font-size: 1.35em;
+                        font-weight: 700;
+                        letter-spacing: 2px;
+                        color: #111;
+                        padding: 8px 0 16px;
+                        margin: 0 0 8px 0;
+                        text-align: center;
+                        border: none !important;
+                        outline: none !important;
+                        box-shadow: none !important;
+                    }
+                    .o_voucher_custom .o_vc-note-row td {
+                        border: 1px solid #e5e5e5;
+                        padding: 8px 14px;
+                        font-style: italic;
+                        color: #555;
+                        background-color: #fafafa;
+                    }
+                    .o_voucher_custom .o_vc_box,
+                    .o_voucher_custom .o_vc-table {
+                        border: 1px solid #ccc;
+                    }
+                    .o_voucher_custom .o_vc-details,
+                    .o_voucher_custom .o_vc-header-block {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                    }
+                    .o_voucher_custom .o_vc-header-block {
+                        border: 1px solid #ccc;
+                    }
+                    .o_voucher_custom .o_vc-details {
+                        border: 1px solid #ccc;
+                    }
+                    .o_voucher_custom .o_vc-details td,
+                    .o_voucher_custom .o_vc-header-block td {
+                        border: 1px solid #e5e5e5;
+                        padding: 10px 14px;
+                    }
+                    .o_voucher_custom .o_vc-details td {
+                        vertical-align: top;
+                    }
+                    .o_voucher_custom .o_vc-header-block td {
+                        vertical-align: middle;
+                    }
+                    .o_voucher_custom .o_vc-header-block .o_vc-digital {
+                        width: 42%;
+                        vertical-align: middle;
+                        padding: 12px 16px;
+                        border-right: 1px solid #d8d8d8;
+                    }
+                    .o_voucher_custom .o_vc-header-block .o_vc-label {
+                        width: 22%;
+                        font-weight: 600;
+                        color: #444;
+                        background-color: #fafafa;
+                    }
+                    .o_voucher_custom .o_vc-details .o_vc-label {
+                        width: 24%;
+                        font-weight: 600;
+                        color: #444;
+                        background-color: #fafafa;
+                    }
+                    .o_voucher_custom .o_vc-details .o_vc-value {
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        word-break: break-word;
+                    }
+                    .o_voucher_custom .o_vc-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                    }
+                    .o_voucher_custom .o_vc-table th,
+                    .o_voucher_custom .o_vc-table td {
+                        border: 1px solid #e5e5e5;
+                        padding: 8px 12px;
+                        vertical-align: top;
+                    }
+                    .o_voucher_custom .o_vc-table thead th {
+                        background-color: #fafafa;
+                        color: #444;
+                        font-weight: 600;
+                        border-bottom: 1px solid #d8d8d8;
+                    }
+                    .o_voucher_custom .o_vc-signatures {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                        border: 1px solid #ccc;
+                    }
+                    .o_voucher_custom .o_vc-signatures td {
+                        border: 1px solid #e5e5e5;
+                        padding: 0;
+                        vertical-align: top;
+                        width: 33.33%;
+                    }
+                    .o_voucher_custom .o_vc-sign-body {
+                        padding: 10px 14px;
+                    }
+                    .o_voucher_custom .o_vc-sign-title {
+                        font-weight: 600;
+                        color: #444;
+                        background-color: #fafafa;
+                        padding: 8px 14px;
+                        border-bottom: 1px solid #e5e5e5;
+                        text-align: left;
+                    }
+                    .o_voucher_custom .o_vc-sign-field {
+                        margin-bottom: 6px;
+                        color: #333;
+                    }
+                    .o_voucher_custom .o_vc-sign-field-label {
+                        color: #666;
+                    }
+                    .o_voucher_custom .o_vc-sign-line {
+                        border-bottom: 1px solid #ccc;
+                        min-height: 24px;
+                        margin-top: 4px;
+                    }
+                    .o_voucher_custom .o_vc-sign-img {
+                        max-height: 45px;
+                        max-width: 140px;
+                        margin-top: 4px;
+                    }
+                    .o_voucher_custom .o_vc-footer {
+                        width: 100%;
+                        table-layout: fixed;
+                        border: 1px solid #ccc;
+                        border-collapse: collapse;
+                    }
+                    .o_voucher_custom .o_vc-footer td {
+                        border: 1px solid #e5e5e5;
+                        padding: 8px 12px;
+                        vertical-align: top;
+                    }
+                    .o_voucher_custom .o_vc-footer-head {
+                        background-color: #fafafa;
+                        color: #444;
+                        padding: 8px 12px;
+                    }
+                    .o_voucher_custom .o_vc-footer .o_vc-label {
+                        background-color: #fafafa;
+                        color: #444;
+                        font-weight: 600;
+                        width: 22%;
+                    }
+                    .o_voucher_custom .o_vc-prepared-row {
+                        display: table;
+                        width: 100%;
+                        border: none;
+                    }
+                    .o_voucher_custom .o_vc-prepared-name,
+                    .o_voucher_custom .o_vc-footer-entered {
+                        display: table-cell;
+                        border: none;
+                        padding: 0;
+                        vertical-align: top;
+                    }
+                    .o_voucher_custom .o_vc-footer-entered {
+                        text-align: right;
+                        white-space: nowrap;
+                        width: 38%;
+                    }
+                    .o_voucher_custom .o_vc-stamp-area {
+                        min-height: 48px;
+                    }
+                </style>
+
+                <h2 class="o_vc-main-title">PAYMENT VOUCHER</h2>
+
+                <table class="o_vc-header-block o_ignore_layout_styling mb-2">
+                    <colgroup>
+                        <col style="width: 42%;"/>
+                        <col style="width: 22%;"/>
+                        <col style="width: 36%;"/>
+                    </colgroup>
+                    <tr>
+                        <td rowspan="4" class="o_vc-digital">
+                            <div class="fw-bold mb-2">DIGITAL COPY</div>
+                            <div>From: Accounting / Administration</div>
+                        </td>
+                        <td class="o_vc-label">TransDate</td>
+                        <td><span t-field="o.date"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Doc NO</td>
+                        <td><span t-esc="values['doc_number']"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Cheque No</td>
+                        <td><span t-esc="values['check_number'] or '—'"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Source</td>
+                        <td><span t-esc="values['source_label']"/></td>
+                    </tr>
+                </table>
+
+                <table class="o_vc-details o_ignore_layout_styling mb-2">
+                    <colgroup>
+                        <col style="width: 24%;"/>
+                        <col style="width: 26%;"/>
+                        <col style="width: 24%;"/>
+                        <col style="width: 26%;"/>
+                    </colgroup>
+                    <tr>
+                        <td class="o_vc-label">Payment Description</td>
+                        <td class="o_vc-value" colspan="3"><span t-field="o.memo"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Pay To</td>
+                        <td class="o_vc-value" colspan="3"><span t-field="o.partner_id"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Project</td>
+                        <td class="o_vc-value" colspan="3"><span t-esc="values['project_names'] or '—'"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Project Account</td>
+                        <td class="o_vc-value" colspan="3"><span t-esc="values['project_accounts'] or '—'"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Donor</td>
+                        <td class="o_vc-value" colspan="3"><span t-esc="values['donors'] or '—'"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Payment Amount</td>
+                        <td class="o_vc-value">
+                            <span t-field="o.amount" t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                        </td>
+                        <td class="o_vc-label">In Words</td>
+                        <td class="o_vc-value"><span t-field="o.amount_in_words"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Payment Mode</td>
+                        <td class="o_vc-value" colspan="3"><span t-field="o.journal_id"/></td>
+                    </tr>
+                    <tr class="o_vc-note-row">
+                        <td colspan="4">Being payment against transactions listed below</td>
+                    </tr>
+                </table>
+
+                <table class="o_vc-table o_ignore_layout_styling mb-1">
+                    <thead>
+                        <tr>
+                            <th style="width: 28%;">GL Account Name</th>
+                            <th style="width: 18%;">Dept</th>
+                            <th>Description</th>
+                            <th class="text-end" style="width: 12%;">Debit</th>
+                            <th class="text-end" style="width: 12%;">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5"><strong>Branch Name:</strong> <span t-esc="values['branch_name']"/></td>
+                        </tr>
+                        <t t-foreach="values['journal_lines']" t-as="line">
+                            <tr>
+                                <td t-esc="line['account_name']"/>
+                                <td t-esc="line['dept']"/>
+                                <td t-esc="line['description']"/>
+                                <td class="text-end">
+                                    <span t-if="line['debit']" t-out="line['debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                </td>
+                                <td class="text-end">
+                                    <span t-if="line['credit']" t-out="line['credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                </td>
+                            </tr>
+                        </t>
+                        <tr t-if="not values['journal_lines']">
+                            <td colspan="5" class="text-center text-muted">No journal items posted yet.</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Subtotal for</td>
+                            <td class="text-end fw-bold">
+                                <span t-out="values['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                            </td>
+                            <td class="text-end fw-bold">
+                                <span t-out="values['total_credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Grand Total</td>
+                            <td class="text-end fw-bold">
+                                <span t-out="values['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                            </td>
+                            <td class="text-end fw-bold">
+                                <span t-out="values['total_credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <table class="o_vc-signatures o_ignore_layout_styling mb-2">
+                    <tr>
+                        <td>
+                            <div class="o_vc-sign-title">(Checked By)</div>
+                            <div class="o_vc-sign-body">
+                            <t t-foreach="values['signatures_by_role'].get('checked', [])" t-as="sig">
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Name:</span>
+                                    <span t-esc="sig.signer_name or ''"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Position:</span>
+                                    <span t-esc="sig.signer_position or ''"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Sign:</span>
+                                    <div t-if="sig.signature">
+                                        <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img" alt="Signature"/>
+                                    </div>
+                                    <div t-else="" class="o_vc-sign-line"/>
+                                </div>
+                            </t>
+                            <t t-if="not values['signatures_by_role'].get('checked')">
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Name:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Position:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Sign:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                            </t>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="o_vc-sign-title">(Reviewed By)</div>
+                            <div class="o_vc-sign-body">
+                            <t t-foreach="values['signatures_by_role'].get('reviewed', [])" t-as="sig">
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Name:</span>
+                                    <span t-esc="sig.signer_name or ''"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Position:</span>
+                                    <span t-esc="sig.signer_position or ''"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Sign:</span>
+                                    <div t-if="sig.signature">
+                                        <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img" alt="Signature"/>
+                                    </div>
+                                    <div t-else="" class="o_vc-sign-line"/>
+                                </div>
+                            </t>
+                            <t t-if="not values['signatures_by_role'].get('reviewed')">
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Name:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Position:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Sign:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                            </t>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="o_vc-sign-title">(Accounts Officer)</div>
+                            <div class="o_vc-sign-body">
+                            <t t-foreach="values['signatures_by_role'].get('accounts_officer', [])" t-as="sig">
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Name:</span>
+                                    <span t-esc="sig.signer_name or ''"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Position:</span>
+                                    <span t-esc="sig.signer_position or ''"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Sign:</span>
+                                    <div t-if="sig.signature">
+                                        <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img" alt="Signature"/>
+                                    </div>
+                                    <div t-else="" class="o_vc-sign-line"/>
+                                </div>
+                            </t>
+                            <t t-if="not values['signatures_by_role'].get('accounts_officer')">
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Name:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Position:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                                <div class="o_vc-sign-field">
+                                    <span class="o_vc-sign-field-label">Sign:</span>
+                                    <div class="o_vc-sign-line"/>
+                                </div>
+                            </t>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="o_vc-footer o_ignore_layout_styling mb-1">
+                    <colgroup>
+                        <col style="width:22%;"/>
+                        <col style="width:78%;"/>
+                    </colgroup>
+                    <tr>
+                        <td colspan="2" class="o_vc-footer-head text-center fw-bold">ACCOUNTING USE ONLY</td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Prepared By</td>
+                        <td>
+                            <div class="o_vc-prepared-row">
+                                <span class="o_vc-prepared-name">
+                                    <t t-foreach="values['signatures_by_role'].get('prepared', [])" t-as="sig">
+                                        <span t-esc="sig.signer_name or ''"/>
+                                        <span t-if="sig.signer_position"> — <span t-esc="sig.signer_position"/></span>
+                                    </t>
+                                </span>
+                                <span class="o_vc-footer-entered">
+                                    <span class="text-muted">Entered on</span>
+                                    <span t-field="o.voucher_entered_on"/>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Approved By</td>
+                        <td>
+                            <t t-foreach="values['signatures_by_role'].get('approved', [])" t-as="sig">
+                                <span t-esc="sig.signer_name or ''"/>
+                                <span t-if="sig.signer_position"> — <span t-esc="sig.signer_position"/></span>
+                                <span t-if="sig.signature">
+                                    <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img ms-2" alt="Signature"/>
+                                </span>
+                            </t>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Quick Notes</td>
+                        <td><span t-field="o.voucher_quick_notes"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Stamp / Archived</td>
+                        <td class="o_vc-stamp-area"/>
+                    </tr>
+                </table>
+            </div>
+        </t>
+    </template>
+
+    <!-- Voucher layout: company footer + page numbers, no letterhead header -->
+    <template id="external_layout_voucher">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+        <t t-if="not company">
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t t-set="layout_background_url"
+           t-value="'data:image/png;base64,%s' % company.layout_background_image.decode('utf-8') if company.layout_background_image and company.layout_background == 'Custom' else
+                '/base/static/img/demo_logo_report.png' if company.layout_background == 'Demo logo' else ''"/>
+        <div t-attf-class="article o_report_layout_standard o_table_standard o_company_#{company.id}_layout o_snail_mail {{'o_report_layout_background' if company.layout_background != 'Blank' else ''}}"
+             t-attf-style="{{ 'background-image: url(%s);' % layout_background_url if layout_background_url else '' }}"
+             t-att-data-oe-model="o and o._name"
+             t-att-data-oe-id="o and o.id"
+             t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <t t-out="0"/>
+        </div>
+        <div t-attf-class="footer o_company_#{company.id}_layout {{report_type != 'pdf' and 'mt-auto'}}">
+            <div class="o_footer_content d-flex border-top pt-2">
+                <div class="flex-grow-1 text-start me-2" t-field="company.report_footer"/>
+                <div class="text-end text-muted">
+                    <div t-if="report_type == 'pdf' and display_name_in_footer" t-out="o.name">(document name)</div>
+                    <div t-if="report_type == 'pdf'" class="text-nowrap">Page <span class="page"/> / <span class="topage"/></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_payment_voucher">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="lang" t-value="o.partner_id.lang or o.company_id.partner_id.lang"/>
+                <t t-call="voucher_custom.report_payment_voucher_document" t-lang="lang"/>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_payment_voucher" model="ir.actions.report">
+        <field name="name">Payment Voucher</field>
+        <field name="model">account.payment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">voucher_custom.report_payment_voucher</field>
+        <field name="report_file">voucher_custom.report_payment_voucher</field>
+        <field name="print_report_name">'Payment Voucher - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="account.model_account_payment"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
