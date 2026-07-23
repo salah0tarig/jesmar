@@ -17,12 +17,6 @@ class AccountPayment(models.Model):
         string='Voucher Entered On',
         default=fields.Date.context_today,
     )
-    voucher_signature_ids = fields.One2many(
-        'account.payment.signature',
-        'payment_id',
-        string='Voucher Signatures',
-        copy=True,
-    )
     voucher_project_display = fields.Char(
         string='Voucher Project(s)',
         compute='_compute_voucher_project_info',
@@ -96,12 +90,12 @@ class AccountPayment(models.Model):
         accounts = self.env['account.analytic.account'].browse(account_ids).exists()
         return ', '.join(accounts.mapped('display_name'))
 
-    def _get_voucher_journal_lines(self):
+    def _journal_lines_from_move(self, move):
+        """Build voucher table rows from one posted journal entry."""
         self.ensure_one()
         rows = []
         total_debit = 0.0
         total_credit = 0.0
-        move = self.move_id
         if not move:
             return rows, total_debit, total_credit
 
@@ -121,21 +115,37 @@ class AccountPayment(models.Model):
             total_credit += line.credit
         return rows, total_debit, total_credit
 
-    def _get_voucher_signatures_by_role(self):
+    def _get_voucher_journal_sections(self):
+        """Bill journal entry(ies) and payment journal entry for the voucher table."""
         self.ensure_one()
-        role_labels = dict(self.env['account.payment.signature']._fields['role'].selection)
-        grouped = {key: [] for key in role_labels}
-        for signature in self.voucher_signature_ids:
-            grouped.setdefault(signature.role, []).append(signature)
-        return grouped, role_labels
+        sections = []
+        for bill in self._get_voucher_bills():
+            lines, total_debit, total_credit = self._journal_lines_from_move(bill)
+            if not lines:
+                continue
+            sections.append({
+                'title': _('Bill Journal Entry: %s') % (bill.name or bill.ref or bill.display_name),
+                'lines': lines,
+                'total_debit': total_debit,
+                'total_credit': total_credit,
+            })
+
+        payment_lines, payment_debit, payment_credit = self._journal_lines_from_move(self.move_id)
+        if payment_lines:
+            sections.append({
+                'title': _('Payment Journal Entry: %s') % (self.name or self.display_name),
+                'lines': payment_lines,
+                'total_debit': payment_debit,
+                'total_credit': payment_credit,
+            })
+        return sections, payment_debit, payment_credit
 
     def _get_payment_voucher_report_values(self):
         self.ensure_one()
-        journal_lines, total_debit, total_credit = self._get_voucher_journal_lines()
-        signatures_by_role, role_labels = self._get_voucher_signatures_by_role()
+        journal_sections, total_debit, total_credit = self._get_voucher_journal_sections()
         projects = self._get_voucher_projects()
         return {
-            'journal_lines': journal_lines,
+            'journal_sections': journal_sections,
             'total_debit': total_debit,
             'total_credit': total_credit,
             'project_names': ', '.join(projects.mapped('name')),
@@ -143,8 +153,6 @@ class AccountPayment(models.Model):
                 aa for aa in projects.mapped('account_id.display_name') if aa
             ),
             'donors': self.voucher_donor_display or '',
-            'signatures_by_role': signatures_by_role,
-            'role_labels': role_labels,
             'check_number': self.voucher_check_number or '',
             'doc_number': self.name or '',
             'source_label': _('GL Payment Voucher'),

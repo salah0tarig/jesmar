@@ -1,5 +1,1 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_account_payment_signature_user,account.payment.signature user,model_account_payment_signature,account.group_account_invoice,1,1,1,1
-access_account_payment_signature_readonly,account.payment.signature readonly,model_account_payment_signature,account.group_account_readonly,1,0,0,0
-access_hr_employee_voucher_account_invoice,hr.employee voucher account invoice,hr.model_hr_employee,account.group_account_invoice,1,0,0,0
-access_hr_employee_voucher_account_readonly,hr.employee voucher account readonly,hr.model_hr_employee,account.group_account_readonly,1,0,0,0

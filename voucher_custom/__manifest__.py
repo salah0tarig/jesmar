@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Voucher Custom',
-    'version': '19.0.1.2.0',
+    'version': '19.0.1.2.3',
     'category': 'Accounting/Accounting',
     'summary': 'Custom Payment Voucher printout for vendor payments',
     'description': """
@@ -10,12 +10,11 @@ Payment Voucher printout
 
 Adds a Jesmar-style payment voucher PDF on account.payment with project/donor
 resolution from reconciled vendor bills and purchase orders, amount in words,
-journal entry lines, and configurable signature blocks.
+and journal entry lines with manual signature blocks on the printout.
     """,
     'author': 'Anas Osman',
     'depends': [
         'account',
-        'hr',
         'purchase',
         'project',
         'project_purchase',

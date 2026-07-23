@@ -269,35 +269,40 @@
                         <tr>
                             <td colspan="5"><strong>Branch Name:</strong> <span t-esc="values['branch_name']"/></td>
                         </tr>
-                        <t t-foreach="values['journal_lines']" t-as="line">
+                        <t t-foreach="values['journal_sections']" t-as="section">
                             <tr>
-                                <td t-esc="line['account_name']"/>
-                                <td t-esc="line['dept']"/>
-                                <td t-esc="line['description']"/>
-                                <td class="text-end">
-                                    <span t-if="line['debit']" t-out="line['debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                <td colspan="5"><strong t-esc="section['title']"/></td>
+                            </tr>
+                            <t t-foreach="section['lines']" t-as="line">
+                                <tr>
+                                    <td t-esc="line['account_name']"/>
+                                    <td t-esc="line['dept']"/>
+                                    <td t-esc="line['description']"/>
+                                    <td class="text-end">
+                                        <span t-if="line['debit']" t-out="line['debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-if="line['credit']" t-out="line['credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                    </td>
+                                </tr>
+                            </t>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">Subtotal</td>
+                                <td class="text-end fw-bold">
+                                    <span t-out="section['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                                 </td>
-                                <td class="text-end">
-                                    <span t-if="line['credit']" t-out="line['credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                <td class="text-end fw-bold">
+                                    <span t-out="section['total_credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                                 </td>
                             </tr>
                         </t>
-                        <tr t-if="not values['journal_lines']">
+                        <tr t-if="not values['journal_sections']">
                             <td colspan="5" class="text-center text-muted">No journal items posted yet.</td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" class="text-end fw-bold">Subtotal for</td>
-                            <td class="text-end fw-bold">
-                                <span t-out="values['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
-                            </td>
-                            <td class="text-end fw-bold">
-                                <span t-out="values['total_credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" class="text-end fw-bold">Grand Total</td>
+                            <td colspan="3" class="text-end fw-bold">Grand Total (Payment)</td>
                             <td class="text-end fw-bold">
                                 <span t-out="values['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                             </td>
@@ -313,24 +318,6 @@
                         <td>
                             <div class="o_vc-sign-title">(Checked By)</div>
                             <div class="o_vc-sign-body">
-                            <t t-foreach="values['signatures_by_role'].get('checked', [])" t-as="sig">
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Name:</span>
-                                    <span t-esc="sig.signer_name or ''"/>
-                                </div>
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Position:</span>
-                                    <span t-esc="sig.signer_position or ''"/>
-                                </div>
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Sign:</span>
-                                    <div t-if="sig.signature">
-                                        <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img" alt="Signature"/>
-                                    </div>
-                                    <div t-else="" class="o_vc-sign-line"/>
-                                </div>
-                            </t>
-                            <t t-if="not values['signatures_by_role'].get('checked')">
                                 <div class="o_vc-sign-field">
                                     <span class="o_vc-sign-field-label">Name:</span>
                                     <div class="o_vc-sign-line"/>
@@ -343,30 +330,11 @@
                                     <span class="o_vc-sign-field-label">Sign:</span>
                                     <div class="o_vc-sign-line"/>
                                 </div>
-                            </t>
                             </div>
                         </td>
                         <td>
                             <div class="o_vc-sign-title">(Reviewed By)</div>
                             <div class="o_vc-sign-body">
-                            <t t-foreach="values['signatures_by_role'].get('reviewed', [])" t-as="sig">
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Name:</span>
-                                    <span t-esc="sig.signer_name or ''"/>
-                                </div>
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Position:</span>
-                                    <span t-esc="sig.signer_position or ''"/>
-                                </div>
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Sign:</span>
-                                    <div t-if="sig.signature">
-                                        <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img" alt="Signature"/>
-                                    </div>
-                                    <div t-else="" class="o_vc-sign-line"/>
-                                </div>
-                            </t>
-                            <t t-if="not values['signatures_by_role'].get('reviewed')">
                                 <div class="o_vc-sign-field">
                                     <span class="o_vc-sign-field-label">Name:</span>
                                     <div class="o_vc-sign-line"/>
@@ -379,30 +347,11 @@
                                     <span class="o_vc-sign-field-label">Sign:</span>
                                     <div class="o_vc-sign-line"/>
                                 </div>
-                            </t>
                             </div>
                         </td>
                         <td>
                             <div class="o_vc-sign-title">(Accounts Officer)</div>
                             <div class="o_vc-sign-body">
-                            <t t-foreach="values['signatures_by_role'].get('accounts_officer', [])" t-as="sig">
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Name:</span>
-                                    <span t-esc="sig.signer_name or ''"/>
-                                </div>
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Position:</span>
-                                    <span t-esc="sig.signer_position or ''"/>
-                                </div>
-                                <div class="o_vc-sign-field">
-                                    <span class="o_vc-sign-field-label">Sign:</span>
-                                    <div t-if="sig.signature">
-                                        <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img" alt="Signature"/>
-                                    </div>
-                                    <div t-else="" class="o_vc-sign-line"/>
-                                </div>
-                            </t>
-                            <t t-if="not values['signatures_by_role'].get('accounts_officer')">
                                 <div class="o_vc-sign-field">
                                     <span class="o_vc-sign-field-label">Name:</span>
                                     <div class="o_vc-sign-line"/>
@@ -415,56 +364,8 @@
                                     <span class="o_vc-sign-field-label">Sign:</span>
                                     <div class="o_vc-sign-line"/>
                                 </div>
-                            </t>
                             </div>
                         </td>
-                    </tr>
-                </table>
-
-                <table class="o_vc-footer o_ignore_layout_styling mb-1">
-                    <colgroup>
-                        <col style="width:22%;"/>
-                        <col style="width:78%;"/>
-                    </colgroup>
-                    <tr>
-                        <td colspan="2" class="o_vc-footer-head text-center fw-bold">ACCOUNTING USE ONLY</td>
-                    </tr>
-                    <tr>
-                        <td class="o_vc-label">Prepared By</td>
-                        <td>
-                            <div class="o_vc-prepared-row">
-                                <span class="o_vc-prepared-name">
-                                    <t t-foreach="values['signatures_by_role'].get('prepared', [])" t-as="sig">
-                                        <span t-esc="sig.signer_name or ''"/>
-                                        <span t-if="sig.signer_position"> — <span t-esc="sig.signer_position"/></span>
-                                    </t>
-                                </span>
-                                <span class="o_vc-footer-entered">
-                                    <span class="text-muted">Entered on</span>
-                                    <span t-field="o.voucher_entered_on"/>
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="o_vc-label">Approved By</td>
-                        <td>
-                            <t t-foreach="values['signatures_by_role'].get('approved', [])" t-as="sig">
-                                <span t-esc="sig.signer_name or ''"/>
-                                <span t-if="sig.signer_position"> — <span t-esc="sig.signer_position"/></span>
-                                <span t-if="sig.signature">
-                                    <img t-att-src="image_data_uri(sig.signature)" class="o_vc-sign-img ms-2" alt="Signature"/>
-                                </span>
-                            </t>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="o_vc-label">Quick Notes</td>
-                        <td><span t-field="o.voucher_quick_notes"/></td>
-                    </tr>
-                    <tr>
-                        <td class="o_vc-label">Stamp / Archived</td>
-                        <td class="o_vc-stamp-area"/>
                     </tr>
                 </table>
             </div>
