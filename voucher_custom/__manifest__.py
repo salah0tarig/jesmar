@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Voucher Custom',
-    'version': '19.0.1.2.3',
+    'version': '19.0.1.2.5',
     'category': 'Accounting/Accounting',
     'summary': 'Custom Payment Voucher printout for vendor payments',
     'description': """
 Payment Voucher printout
 ========================
 
-Adds a Jesmar-style payment voucher PDF on account.payment with project/donor
-resolution from reconciled vendor bills and purchase orders, amount in words,
-and journal entry lines with manual signature blocks on the printout.
+Adds Jesmar-style payment, receipt, and journal voucher PDFs with journal
+entry lines, analytic department columns, and manual signature blocks.
     """,
     'author': 'Anas Osman',
     'depends': [
@@ -24,7 +23,9 @@ and journal entry lines with manual signature blocks on the printout.
         'security/ir.model.access.csv',
         'views/project_project_views.xml',
         'views/account_payment_views.xml',
+        'views/account_move_views.xml',
         'reports/payment_voucher_report.xml',
+        'reports/journal_voucher_report.xml',
     ],
     'installable': True,
     'application': False,

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models, _
+from odoo.tools.misc import formatLang, format_date
 
 
 class AccountPayment(models.Model):
@@ -115,36 +116,98 @@ class AccountPayment(models.Model):
             total_credit += line.credit
         return rows, total_debit, total_credit
 
-    def _get_voucher_journal_sections(self):
-        """Bill journal entry(ies) and payment journal entry for the voucher table."""
+    def _get_voucher_journal_sections(self, is_receipt=False):
+        """Payment/receipt journal entry only for the voucher table."""
         self.ensure_one()
         sections = []
-        for bill in self._get_voucher_bills():
-            lines, total_debit, total_credit = self._journal_lines_from_move(bill)
-            if not lines:
-                continue
-            sections.append({
-                'title': _('Bill Journal Entry: %s') % (bill.name or bill.ref or bill.display_name),
-                'lines': lines,
-                'total_debit': total_debit,
-                'total_credit': total_credit,
-            })
-
         payment_lines, payment_debit, payment_credit = self._journal_lines_from_move(self.move_id)
         if payment_lines:
+            title_tmpl = _('Receipt Journal Entry: %s') if is_receipt else _('Payment Journal Entry: %s')
             sections.append({
-                'title': _('Payment Journal Entry: %s') % (self.name or self.display_name),
+                'title': title_tmpl % (self.name or self.display_name),
                 'lines': payment_lines,
                 'total_debit': payment_debit,
                 'total_credit': payment_credit,
             })
         return sections, payment_debit, payment_credit
 
-    def _get_payment_voucher_report_values(self):
+    def _get_voucher_currency_rate_info(self):
+        """Return exchange rate for voucher when payment currency != company currency."""
         self.ensure_one()
-        journal_sections, total_debit, total_credit = self._get_voucher_journal_sections()
-        projects = self._get_voucher_projects()
+        company_currency = self.company_currency_id
+        payment_currency = self.currency_id
+        if not payment_currency or payment_currency == company_currency:
+            return False
+
+        rate_date = self.date or fields.Date.context_today(self)
+        rate = None
+
+        if self.move_id and self.move_id.state == 'posted':
+            foreign_lines = self.move_id.line_ids.filtered(
+                lambda line: line.currency_id == payment_currency
+                and line.amount_currency
+                and not line.display_type
+            )
+            if foreign_lines:
+                line = foreign_lines[0]
+                if line.amount_currency:
+                    rate = abs(line.balance) / abs(line.amount_currency)
+
+        if not rate:
+            rate = payment_currency._convert(
+                1.0,
+                company_currency,
+                self.company_id,
+                rate_date,
+            )
+
+        rate_digits = max(company_currency.decimal_places or 2, 4)
+        rate_formatted = formatLang(self.env, rate, digits=rate_digits)
         return {
+            'date': rate_date,
+            'date_display': format_date(self.env, rate_date),
+            'rate': rate,
+            'payment_currency': payment_currency.name,
+            'company_currency': company_currency.name,
+            'rate_display': _('1 %(from)s = %(rate)s %(to)s') % {
+                'from': payment_currency.name,
+                'rate': rate_formatted,
+                'to': company_currency.name,
+            },
+        }
+
+    def _get_payment_voucher_report_values(self, voucher_type=None):
+        self.ensure_one()
+        is_receipt = (voucher_type == 'receipt') or (
+            voucher_type is None and self.payment_type == 'inbound'
+        )
+        journal_sections, total_debit, total_credit = self._get_voucher_journal_sections(
+            is_receipt=is_receipt
+        )
+        projects = self._get_voucher_projects()
+        if is_receipt:
+            labels = {
+                'title': _('RECEIPT VOUCHER'),
+                'partner_label': _('Received From'),
+                'description_label': _('Received Description'),
+                'amount_label': _('Receipt Amount'),
+                'note': _('Being receipt against transactions listed below'),
+                'grand_total_label': _('Grand Total (Receipt)'),
+                'source_label': _('GL Receipt Voucher'),
+            }
+        else:
+            labels = {
+                'title': _('PAYMENT VOUCHER'),
+                'partner_label': _('Pay To'),
+                'description_label': _('Payment Description'),
+                'amount_label': _('Payment Amount'),
+                'note': _('Being payment against transactions listed below'),
+                'grand_total_label': _('Grand Total (Payment)'),
+                'source_label': _('GL Payment Voucher'),
+            }
+        return {
+            'is_receipt': is_receipt,
+            'labels': labels,
             'journal_sections': journal_sections,
             'total_debit': total_debit,
             'total_credit': total_credit,
@@ -155,6 +218,7 @@ class AccountPayment(models.Model):
             'donors': self.voucher_donor_display or '',
             'check_number': self.voucher_check_number or '',
             'doc_number': self.name or '',
-            'source_label': _('GL Payment Voucher'),
+            'source_label': labels['source_label'],
             'branch_name': self.company_id.name or '',
+            'currency_rate_info': self._get_voucher_currency_rate_info(),
         }
