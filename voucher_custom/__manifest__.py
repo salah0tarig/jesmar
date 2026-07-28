@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Voucher Custom',
-    'version': '19.0.1.2.5',
+    'version': '19.0.1.2.6',
     'category': 'Accounting/Accounting',
     'summary': 'Custom Payment Voucher printout for vendor payments',
     'description': """
@@ -24,6 +24,7 @@ entry lines, analytic department columns, and manual signature blocks.
         'views/project_project_views.xml',
         'views/account_payment_views.xml',
         'views/account_move_views.xml',
+        'reports/voucher_paperformat.xml',
         'reports/payment_voucher_report.xml',
         'reports/journal_voucher_report.xml',
     ],

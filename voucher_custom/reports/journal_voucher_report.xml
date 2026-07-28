@@ -9,7 +9,7 @@
                 line-height: 1.35;
                 color: #333;
                 margin: 0;
-                padding-top: 16px;
+                padding-top: 8px;
             }
             .o_report_layout_standard .header {
                 margin-bottom: 4px !important;
@@ -22,8 +22,8 @@
                 font-weight: 700;
                 letter-spacing: 1.5px;
                 color: #111;
-                padding: 0 0 10px;
-                margin: 0 0 20px;
+                padding: 0 0 6px;
+                margin: 0 0 12px;
                 text-align: center;
                 border-bottom: 2px solid #333;
             }
@@ -67,6 +67,13 @@
                 width: 28%;
                 background-color: #fafafa;
                 font-size: 10pt;
+                vertical-align: top;
+                padding: 8px 10px 14px;
+            }
+            .o_voucher_custom .o_vc-digital-sub {
+                margin-top: 6px;
+                padding-bottom: 8px;
+                line-height: 1.45;
             }
             .o_voucher_custom .o_vc-table .o_vc-table-head td {
                 background-color: #f0f0f0;
@@ -77,6 +84,23 @@
                 font-weight: 700;
                 background-color: #f9f9f9;
                 border-top: 1px solid #999;
+            }
+            .o_voucher_custom .o_vc-table .o_vc-amount {
+                width: 11%;
+                white-space: nowrap;
+                padding: 6px 8px;
+            }
+            .o_voucher_custom .o_vc-table .o_vc-col-gl {
+                width: 10%;
+            }
+            .o_voucher_custom .o_vc-table .o_vc-col-account {
+                width: 20%;
+            }
+            .o_voucher_custom .o_vc-table .o_vc-col-dept {
+                width: 10%;
+            }
+            .o_voucher_custom .o_vc-table .o_vc-col-desc {
+                width: 38%;
             }
             .o_voucher_custom .o_vc-section-title td {
                 background-color: #eee;
@@ -147,8 +171,8 @@
                 <table class="o_vc-meta o_ignore_layout_styling">
                     <tr>
                         <td class="o_vc-digital" rowspan="2">
-                            <strong>DIGITAL COPY</strong><br/>
-                            Accounting / Administration
+                            <strong>DIGITAL COPY</strong>
+                            <div class="o_vc-digital-sub">Accounting / Administration</div>
                         </td>
                         <td class="o_vc-label">Trans. Date</td>
                         <td><span t-field="o.date"/></td>
@@ -164,14 +188,22 @@
                 </table>
 
                 <table class="o_vc-table o_ignore_layout_styling">
+                    <colgroup>
+                        <col class="o_vc-col-gl"/>
+                        <col class="o_vc-col-account"/>
+                        <col class="o_vc-col-dept"/>
+                        <col class="o_vc-col-desc"/>
+                        <col class="o_vc-amount"/>
+                        <col class="o_vc-amount"/>
+                    </colgroup>
                     <tbody>
                         <tr class="o_vc-table-head">
-                            <td style="width: 10%;">GL</td>
-                            <td style="width: 22%;">Account Name</td>
-                            <td style="width: 16%;">Dept</td>
+                            <td>GL</td>
+                            <td>Account Name</td>
+                            <td>Dept</td>
                             <td>Des</td>
-                            <td class="text-end" style="width: 11%;">Debit</td>
-                            <td class="text-end" style="width: 11%;">Credit</td>
+                            <td class="text-end o_vc-amount">Debit</td>
+                            <td class="text-end o_vc-amount">Credit</td>
                         </tr>
                         <tr class="o_vc-section-title">
                             <td colspan="6"><strong>Branch Name:</strong> <span t-esc="values['branch_name']"/></td>
@@ -182,11 +214,13 @@
                                 <td t-esc="line['account_name']"/>
                                 <td t-esc="line['dept']"/>
                                 <td t-esc="line['description']"/>
-                                <td class="text-end">
+                                <td class="text-end o_vc-amount">
                                     <span t-if="line['debit']" t-out="line['debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                    <span t-else="">&#160;</span>
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end o_vc-amount">
                                     <span t-if="line['credit']" t-out="line['credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                    <span t-else="">&#160;</span>
                                 </td>
                             </tr>
                         </t>
@@ -195,19 +229,19 @@
                         </tr>
                         <tr class="o_vc-table-total">
                             <td colspan="4" class="text-end"><t t-esc="values['subtotal_label']"/></td>
-                            <td class="text-end">
+                            <td class="text-end o_vc-amount">
                                 <span t-out="values['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                             </td>
-                            <td class="text-end">
+                            <td class="text-end o_vc-amount">
                                 <span t-out="values['total_credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                             </td>
                         </tr>
                         <tr class="o_vc-table-total">
                             <td colspan="4" class="text-end"><t t-esc="values['grand_total_label']"/></td>
-                            <td class="text-end">
+                            <td class="text-end o_vc-amount">
                                 <span t-out="values['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                             </td>
-                            <td class="text-end">
+                            <td class="text-end o_vc-amount">
                                 <span t-out="values['total_credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                             </td>
                         </tr>
@@ -292,7 +326,7 @@
         <field name="report_name">voucher_custom.report_journal_voucher</field>
         <field name="report_file">voucher_custom.report_journal_voucher</field>
         <field name="print_report_name">'Journal Voucher - %s' % (object.name)</field>
-        <field name="paperformat_id" ref="voucher_custom.paperformat_payment_voucher"/>
+        <field name="paperformat_id" ref="voucher_custom.paperformat_voucher_jesmar"/>
         <field name="binding_model_id" ref="account.model_account_move"/>
         <field name="binding_type">report</field>
         <field name="domain">[('move_type', '=', 'entry')]</field>

@@ -51,9 +51,7 @@ class AccountPayment(models.Model):
         for payment in self:
             projects = payment._get_voucher_projects()
             payment.voucher_project_display = ', '.join(projects.mapped('name'))
-            payment.voucher_project_aa_display = ', '.join(
-                aa for aa in projects.mapped('account_id.display_name') if aa
-            )
+            payment.voucher_project_aa_display = payment._get_voucher_project_account_display(projects)
             donor_names = [
                 name for name in projects.mapped('donor_id.display_name') if name
             ]
@@ -62,6 +60,18 @@ class AccountPayment(models.Model):
     def _compute_voucher_check_number(self):
         for payment in self:
             payment.voucher_check_number = getattr(payment, 'check_number', False) or ''
+
+    def _get_voucher_project_account_display(self, projects):
+        """Analytic account display name(s) for the voucher."""
+        labels = []
+        for project in projects:
+            account = project.account_id
+            if not account:
+                continue
+            label = (account.display_name or '').strip()
+            if label and label not in labels:
+                labels.append(label)
+        return ', '.join(labels)
 
     def _get_voucher_bills(self):
         self.ensure_one()
@@ -185,11 +195,13 @@ class AccountPayment(models.Model):
             is_receipt=is_receipt
         )
         projects = self._get_voucher_projects()
+        project_names = ', '.join(projects.mapped('name'))
+        project_accounts = self._get_voucher_project_account_display(projects)
         if is_receipt:
             labels = {
                 'title': _('RECEIPT VOUCHER'),
                 'partner_label': _('Received From'),
-                'description_label': _('Received Description'),
+                'description_label': _('Description'),
                 'amount_label': _('Receipt Amount'),
                 'note': _('Being receipt against transactions listed below'),
                 'grand_total_label': _('Grand Total (Receipt)'),
@@ -199,7 +211,7 @@ class AccountPayment(models.Model):
             labels = {
                 'title': _('PAYMENT VOUCHER'),
                 'partner_label': _('Pay To'),
-                'description_label': _('Payment Description'),
+                'description_label': _('Description'),
                 'amount_label': _('Payment Amount'),
                 'note': _('Being payment against transactions listed below'),
                 'grand_total_label': _('Grand Total (Payment)'),
@@ -211,10 +223,8 @@ class AccountPayment(models.Model):
             'journal_sections': journal_sections,
             'total_debit': total_debit,
             'total_credit': total_credit,
-            'project_names': ', '.join(projects.mapped('name')),
-            'project_accounts': ', '.join(
-                aa for aa in projects.mapped('account_id.display_name') if aa
-            ),
+            'project_names': project_names,
+            'project_accounts': project_accounts,
             'donors': self.voucher_donor_display or '',
             'check_number': self.voucher_check_number or '',
             'doc_number': self.name or '',

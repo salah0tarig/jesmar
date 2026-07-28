@@ -9,26 +9,25 @@
                 <style>
                     /* Tighter spacing inside standard external layout */
                     .o_report_layout_standard .header {
-                        margin-bottom: 4px !important;
+                        margin-bottom: 2px !important;
                     }
                     .o_report_layout_standard .article {
                         padding-top: 0 !important;
                     }
                     .o_voucher_custom {
-                        font-size: 10.5pt;
-                        line-height: 1.35;
+                        font-size: 10pt;
+                        line-height: 1.25;
                         color: #333;
                         margin: 0;
-                        padding-top: 16px;
-                        page-break-inside: avoid;
+                        padding-top: 4px;
                     }
                     .o_voucher_custom .o_vc-main-title {
-                        font-size: 15pt;
+                        font-size: 14pt;
                         font-weight: 700;
-                        letter-spacing: 1.5px;
+                        letter-spacing: 1px;
                         color: #111;
-                        padding: 0 0 10px;
-                        margin: 0 0 20px;
+                        padding: 0 0 4px;
+                        margin: 0 0 8px;
                         text-align: center;
                         border-bottom: 2px solid #333;
                     }
@@ -42,17 +41,17 @@
                     .o_voucher_custom .o_vc-table,
                     .o_voucher_custom .o_vc-signatures {
                         border: 1px solid #bbb;
-                        margin-bottom: 8px;
+                        margin-bottom: 3px;
                     }
                     .o_voucher_custom .o_vc-meta {
-                        margin-top: 4px;
+                        margin-top: 2px;
                     }
                     .o_voucher_custom .o_vc-meta td,
                     .o_voucher_custom .o_vc-details td,
                     .o_voucher_custom .o_vc-table td,
                     .o_voucher_custom .o_vc-signatures td {
                         border: 1px solid #ddd;
-                        padding: 6px 10px;
+                        padding: 3px 8px;
                         vertical-align: top;
                     }
                     .o_voucher_custom .o_vc-label {
@@ -66,33 +65,70 @@
                         word-wrap: break-word;
                         overflow-wrap: break-word;
                     }
+                    .o_voucher_custom .o_vc-value-long {
+                        font-size: 9.5pt;
+                        line-height: 1.2;
+                    }
                     .o_voucher_custom .o_vc-digital {
                         width: 28%;
                         background-color: #fafafa;
-                        font-size: 10pt;
+                        font-size: 9.5pt;
+                        vertical-align: top;
+                        padding: 4px 8px 8px;
+                    }
+                    .o_voucher_custom .o_vc-digital-sub {
+                        margin-top: 4px;
+                        padding-bottom: 4px;
+                        line-height: 1.3;
+                    }
+                    .o_voucher_custom .o_vc-details .o_vc-label {
+                        white-space: normal;
+                        width: 22%;
+                    }
+                    .o_voucher_custom .o_vc-details .o_vc-value-long {
+                        font-size: 9.5pt;
+                        line-height: 1.2;
                     }
                     .o_voucher_custom .o_vc-note-row td {
                         font-style: italic;
                         color: #555;
                         background-color: #fafafa;
-                        padding: 6px 10px;
-                        font-size: 10pt;
+                        padding: 3px 8px;
+                        font-size: 9.5pt;
                     }
                     .o_voucher_custom .o_vc-table .o_vc-table-head td {
                         background-color: #f0f0f0;
                         font-weight: 600;
-                        font-size: 10pt;
+                        font-size: 9.5pt;
+                        padding: 3px 8px;
                     }
                     .o_voucher_custom .o_vc-table .o_vc-table-total td {
                         font-weight: 700;
                         background-color: #f9f9f9;
                         border-top: 1px solid #999;
                     }
+                    .o_voucher_custom .o_vc-table .o_vc-amount {
+                        width: 13%;
+                        white-space: nowrap;
+                        padding: 3px 6px;
+                    }
+                    .o_voucher_custom .o_vc-table .o_vc-col-gl {
+                        width: 22%;
+                    }
+                    .o_voucher_custom .o_vc-table .o_vc-col-dept {
+                        width: 10%;
+                    }
+                    .o_voucher_custom .o_vc-table .o_vc-col-desc {
+                        width: 42%;
+                    }
                     .o_voucher_custom .o_vc-section-title td {
                         background-color: #eee;
                         font-weight: 600;
-                        font-size: 10pt;
-                        padding: 4px 10px;
+                        font-size: 9.5pt;
+                        padding: 2px 8px;
+                    }
+                    .o_voucher_custom .o_vc-signatures {
+                        page-break-inside: avoid;
                     }
                     .o_voucher_custom .o_vc-signatures td {
                         width: 33.33%;
@@ -100,22 +136,22 @@
                     }
                     .o_voucher_custom .o_vc-sign-title {
                         font-weight: 600;
-                        font-size: 10pt;
+                        font-size: 9.5pt;
                         background-color: #f0f0f0;
-                        padding: 5px 10px;
+                        padding: 3px 8px;
                         border-bottom: 1px solid #ddd;
                     }
                     .o_voucher_custom .o_vc-sign-body {
-                        padding: 8px 10px 10px;
-                        font-size: 10pt;
+                        padding: 4px 8px 5px;
+                        font-size: 9.5pt;
                     }
                     .o_voucher_custom .o_vc-sign-line {
                         border-bottom: 1px solid #999;
-                        min-height: 20px;
-                        margin-top: 4px;
+                        min-height: 10px;
+                        margin-top: 1px;
                     }
                     .o_voucher_custom .o_vc-sign-field {
-                        margin-bottom: 6px;
+                        margin-bottom: 2px;
                     }
                     .o_voucher_custom .o_vc-sign-field-label {
                         color: #666;
@@ -128,8 +164,8 @@
                 <table class="o_vc-meta o_ignore_layout_styling">
                     <tr>
                         <td class="o_vc-digital" rowspan="2">
-                            <strong>DIGITAL COPY</strong><br/>
-                            Accounting / Administration
+                            <strong>DIGITAL COPY</strong>
+                            <div class="o_vc-digital-sub">Accounting / Administration</div>
                         </td>
                         <td class="o_vc-label">Trans. Date</td>
                         <td><span t-field="o.date"/></td>
@@ -156,13 +192,15 @@
                     </tr>
                     <tr>
                         <td class="o_vc-label">Project</td>
-                        <td class="o_vc-value"><span t-esc="values['project_names'] or '—'"/></td>
-                        <td class="o_vc-label">Donor</td>
-                        <td class="o_vc-value"><span t-esc="values['donors'] or '—'"/></td>
+                        <td class="o_vc-value o_vc-value-long" colspan="3"><span t-esc="values['project_names'] or '—'"/></td>
                     </tr>
                     <tr>
-                        <td class="o_vc-label">Project Account</td>
-                        <td class="o_vc-value" colspan="3"><span t-esc="values['project_accounts'] or '—'"/></td>
+                        <td class="o_vc-label">Project Analytic Account</td>
+                        <td class="o_vc-value o_vc-value-long" colspan="3"><span t-esc="values['project_accounts'] or '—'"/></td>
+                    </tr>
+                    <tr>
+                        <td class="o_vc-label">Donor</td>
+                        <td class="o_vc-value" colspan="3"><span t-esc="values['donors'] or '—'"/></td>
                     </tr>
                     <tr>
                         <td class="o_vc-label"><t t-esc="values['labels']['amount_label']"/></td>
@@ -194,13 +232,20 @@
 
                 <!-- Journal lines -->
                 <table class="o_vc-table o_ignore_layout_styling">
+                    <colgroup>
+                        <col class="o_vc-col-gl"/>
+                        <col class="o_vc-col-dept"/>
+                        <col class="o_vc-col-desc"/>
+                        <col class="o_vc-amount"/>
+                        <col class="o_vc-amount"/>
+                    </colgroup>
                     <tbody>
                         <tr class="o_vc-table-head">
-                            <td style="width: 26%;">GL Account</td>
-                            <td style="width: 16%;">Dept</td>
+                            <td>GL Account</td>
+                            <td>Dept</td>
                             <td>Description</td>
-                            <td class="text-end" style="width: 11%;">Debit</td>
-                            <td class="text-end" style="width: 11%;">Credit</td>
+                            <td class="text-end o_vc-amount">Debit</td>
+                            <td class="text-end o_vc-amount">Credit</td>
                         </tr>
                         <tr class="o_vc-section-title">
                             <td colspan="5">
@@ -216,11 +261,13 @@
                                     <td t-esc="line['account_name']"/>
                                     <td t-esc="line['dept']"/>
                                     <td t-esc="line['description']"/>
-                                    <td class="text-end">
+                                    <td class="text-end o_vc-amount">
                                         <span t-if="line['debit']" t-out="line['debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                        <span t-else="">&#160;</span>
                                     </td>
-                                    <td class="text-end">
+                                    <td class="text-end o_vc-amount">
                                         <span t-if="line['credit']" t-out="line['credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
+                                        <span t-else="">&#160;</span>
                                     </td>
                                 </tr>
                             </t>
@@ -230,10 +277,10 @@
                         </tr>
                         <tr class="o_vc-table-total">
                             <td colspan="3" class="text-end"><t t-esc="values['labels']['grand_total_label']"/></td>
-                            <td class="text-end">
+                            <td class="text-end o_vc-amount">
                                 <span t-out="values['total_debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                             </td>
-                            <td class="text-end">
+                            <td class="text-end o_vc-amount">
                                 <span t-out="values['total_credit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>
                             </td>
                         </tr>
@@ -272,19 +319,6 @@
             </div>
         </t>
     </template>
-
-    <record id="paperformat_payment_voucher" model="report.paperformat">
-        <field name="name">Payment Voucher (Compact)</field>
-        <field name="format">A4</field>
-        <field name="orientation">Portrait</field>
-        <field name="margin_top">28</field>
-        <field name="margin_bottom">12</field>
-        <field name="margin_left">8</field>
-        <field name="margin_right">8</field>
-        <field name="header_line" eval="False"/>
-        <field name="header_spacing">8</field>
-        <field name="dpi">90</field>
-    </record>
 
     <!-- Voucher layout: company footer + page numbers, no letterhead header -->
     <template id="external_layout_voucher">
@@ -348,7 +382,7 @@
         <field name="report_name">voucher_custom.report_payment_voucher</field>
         <field name="report_file">voucher_custom.report_payment_voucher</field>
         <field name="print_report_name">'Payment Voucher - %s' % (object.name)</field>
-        <field name="paperformat_id" ref="voucher_custom.paperformat_payment_voucher"/>
+        <field name="paperformat_id" ref="voucher_custom.paperformat_voucher_jesmar"/>
         <field name="binding_model_id" ref="account.model_account_payment"/>
         <field name="binding_type">report</field>
         <field name="domain">[('payment_type', '=', 'outbound')]</field>
@@ -361,7 +395,7 @@
         <field name="report_name">voucher_custom.report_receipt_voucher</field>
         <field name="report_file">voucher_custom.report_receipt_voucher</field>
         <field name="print_report_name">'Receipt Voucher - %s' % (object.name)</field>
-        <field name="paperformat_id" ref="voucher_custom.paperformat_payment_voucher"/>
+        <field name="paperformat_id" ref="voucher_custom.paperformat_voucher_jesmar"/>
         <field name="binding_model_id" ref="account.model_account_payment"/>
         <field name="binding_type">report</field>
         <field name="domain">[('payment_type', '=', 'inbound')]</field>
