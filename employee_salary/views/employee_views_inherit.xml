@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="hr_employee_form_inherit_salary" model="ir.ui.view">
         <field name="name">hr.employee.form.inherit.salary</field>
@@ -5,8 +6,9 @@
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
             <xpath expr="//label[@for='wage']" position="before">
-                <field name="approval_amount"/>
-                <field name="social_insurance"/>
+                <field name="total_staff_cost"/>
+                <field name="social_insurance" readonly="1"/>
+                <field name="medical_insurance" readonly="1"/>
             </xpath>
             <xpath expr="//div[@name='wage']/field[@name='wage']" position="attributes">
                 <attribute name="readonly">1</attribute>

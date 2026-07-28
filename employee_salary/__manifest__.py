@@ -23,7 +23,7 @@ without full payroll complexity.
     'website': "https://www.yourcompany.com",
 
     'category': 'Human Resources',
-    'version': '19.0.2.0.2',
+    'version': '19.0.2.0.4',
 
     'depends': ['base', 'hr'],
 
