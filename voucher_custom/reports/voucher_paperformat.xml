@@ -11,7 +11,7 @@
         <field name="margin_left">10</field>
         <field name="margin_right">10</field>
         <field name="header_line" eval="False"/>
-        <field name="header_spacing">28</field>
+        <field name="header_spacing">34</field>
         <field name="disable_shrinking" eval="True"/>
         <field name="dpi">96</field>
     </record>
