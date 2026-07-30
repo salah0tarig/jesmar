@@ -291,7 +291,7 @@
                 <table class="o_vc-signatures o_ignore_layout_styling">
                     <tr>
                         <td>
-                            <div class="o_vc-sign-title">Checked By</div>
+                            <div class="o_vc-sign-title">Prepared By</div>
                             <div class="o_vc-sign-body">
                                 <div class="o_vc-sign-field"><span class="o_vc-sign-field-label">Name:</span><div class="o_vc-sign-line"/></div>
                                 <div class="o_vc-sign-field"><span class="o_vc-sign-field-label">Position:</span><div class="o_vc-sign-line"/></div>
@@ -307,7 +307,7 @@
                             </div>
                         </td>
                         <td>
-                            <div class="o_vc-sign-title">Accounts Officer</div>
+                            <div class="o_vc-sign-title">Approved By</div>
                             <div class="o_vc-sign-body">
                                 <div class="o_vc-sign-field"><span class="o_vc-sign-field-label">Name:</span><div class="o_vc-sign-line"/></div>
                                 <div class="o_vc-sign-field"><span class="o_vc-sign-field-label">Position:</span><div class="o_vc-sign-line"/></div>

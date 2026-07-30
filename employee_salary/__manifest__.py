@@ -23,11 +23,12 @@ without full payroll complexity.
     'website': "https://www.yourcompany.com",
 
     'category': 'Human Resources',
-    'version': '19.0.2.0.4',
+    'version': '19.0.2.0.6',
 
-    'depends': ['base', 'hr'],
+    'depends': ['base', 'hr', 'hr_payroll'],
 
     'data': [
+        'data/hr_salary_rules_data.xml',
         'views/employee_views_inherit.xml',
     ],
 

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Remove duplicate worker-structure rules from earlier version -->
+    <delete model="hr.salary.rule" id="salary_rule_employer_social_insurance_worker"/>
+    <delete model="hr.salary.rule" id="salary_rule_employer_medical_insurance_worker"/>
+
+    <!-- Employer contributions on Regular Pay: SI 17% + MI 6% of Gross -->
+    <record id="salary_rule_employer_social_insurance" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.COMP"/>
+        <field name="name">Social Insurance</field>
+        <field name="sequence">110</field>
+        <field name="code">EMP_SI</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="appears_on_employee_cost_dashboard" eval="True"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = categories['GROSS'] * 0.17
+        </field>
+        <field name="struct_id" ref="hr_payroll.structure_002"/>
+    </record>
+
+    <record id="salary_rule_employer_medical_insurance" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.COMP"/>
+        <field name="name">Medical Insurance</field>
+        <field name="sequence">120</field>
+        <field name="code">EMP_MI</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="appears_on_employee_cost_dashboard" eval="True"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = categories['GROSS'] * 0.06
+        </field>
+        <field name="struct_id" ref="hr_payroll.structure_002"/>
+    </record>
+</odoo>
