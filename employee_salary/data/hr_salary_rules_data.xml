@@ -34,4 +34,22 @@ result = categories['GROSS'] * 0.06
         </field>
         <field name="struct_id" ref="hr_payroll.structure_002"/>
     </record>
+
+    <!-- Total Employee Cost: single expense debit (set Debit Account on this rule).
+         Gross / SI / MI use payable (liability) accounts; budget allocation splits here. -->
+    <record id="salary_rule_total_employer_cost" model="hr.salary.rule">
+        <field name="category_id" ref="hr_payroll.COMP"/>
+        <field name="name">Total Employee Cost</field>
+        <field name="sequence">130</field>
+        <field name="code">STAFF_COST</field>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="appears_on_employee_cost_dashboard" eval="False"/>
+        <field name="not_computed_in_net" eval="True"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = version.total_staff_cost or 0.0
+        </field>
+        <field name="struct_id" ref="hr_payroll.structure_002"/>
+    </record>
 </odoo>

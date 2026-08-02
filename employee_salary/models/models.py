@@ -91,6 +91,11 @@ class HrEmployee(models.Model):
         inherited=True,
         groups='hr.group_hr_manager',
     )
+    salary_allocation_ids = fields.One2many(
+        related='version_id.salary_allocation_ids',
+        readonly=False,
+        groups='hr.group_hr_manager',
+    )
     wage = fields.Monetary(
         related='version_id.wage',
         inherited=True,

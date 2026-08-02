@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_employee_form_salary_budget_allocation" model="ir.ui.view">
+        <field name="name">hr.employee.form.salary.budget.allocation</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/notebook" position="inside">
+                <page string="Salary budget allocation" name="salary_budget_allocation"
+                      groups="hr.group_hr_manager">
+                    <p class="text-muted">
+                        Set an expense Debit Account on the «Total Employee Cost» salary rule.
+                        Budget allocation splits that single debit by Total Employee Cost × %.
+                    </p>
+                    <field name="version_id" invisible="1"/>
+                    <field name="salary_allocation_ids"
+                           context="{'default_version_id': version_id}"
+                           readonly="not version_id">
+                        <list editable="bottom">
+                            <field name="company_id" column_invisible="1"/>
+                            <field name="budget_line_id"
+                                   options="{'no_create': True}"
+                                   domain="[('budget_analytic_id.state', '=', 'confirmed'), ('budget_analytic_id.company_id', '=', company_id)]"/>
+                            <field name="budget_project_id" optional="show"/>
+                            <field name="product_id" optional="show"/>
+                            <field name="analytic_account_id" optional="show"/>
+                            <field name="percentage" sum="Total %"/>
+                            <field name="total_employee_cost" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="allocated_amount" sum="Total Amount"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_hr_payslip_form_salary_budget_allocation" model="ir.ui.view">
+        <field name="name">hr.payslip.form.salary.budget.allocation</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/notebook" position="inside">
+                <page string="Budget allocation" name="salary_budget_allocation"
+                      invisible="state == 'cancel'">
+                    <button name="action_copy_salary_allocations_from_contract"
+                            type="object"
+                            string="Copy from employee record"
+                            class="btn-secondary mb-2"
+                            invisible="state != 'draft'"/>
+                    <p class="text-muted">
+                        Amounts = Total Employee Cost × allocation %.
+                        Applied on the «Total Employee Cost» expense debit when the payslip is posted.
+                    </p>
+                    <field name="salary_allocation_ids"
+                           readonly="state != 'draft'"
+                           context="{'default_payslip_id': id}">
+                        <list editable="bottom">
+                            <field name="company_id" column_invisible="1"/>
+                            <field name="budget_line_id"
+                                   options="{'no_create': True}"
+                                   domain="[('budget_analytic_id.state', '=', 'confirmed'), ('budget_analytic_id.company_id', '=', company_id)]"/>
+                            <field name="budget_project_id" optional="show"/>
+                            <field name="product_id" optional="show"/>
+                            <field name="analytic_account_id" optional="show"/>
+                            <field name="percentage" sum="Total %"/>
+                            <field name="total_employee_cost" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="allocated_amount" sum="Total Amount"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
