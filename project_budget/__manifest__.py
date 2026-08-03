@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Project Budget (Outcome & Output)',
-    'version': '19.0.2.0.6',
+    'version': '19.0.2.0.7',
     'category': 'Accounting/Accounting',
     'summary': 'Project-centric budget with Outcome/Output hierarchy and Activity-driven budget lines',
     'description': """

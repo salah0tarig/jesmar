@@ -10,6 +10,12 @@ from odoo.fields import Domain
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
+    budget_analytic_ids = fields.One2many(
+        'budget.analytic',
+        'project_id',
+        string='Budgets',
+    )
+
     outcome_ids = fields.Many2many(
         'account.analytic.account',
         compute='_compute_outcome_ids',

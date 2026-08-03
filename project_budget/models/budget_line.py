@@ -21,12 +21,13 @@ class BudgetLine(models.Model):
         }
         for line in self:
             committed, achieved = grouped.get(line, (0.0, 0.0))
+            task = line.sudo().task_id
             # Fallback when report returns 0: direct compute (plan matching fails for activity hierarchy)
-            if not committed and line.task_id and line.task_id.activity_analytic_account_id and line.date_from and line.date_to:
+            if not committed and task and task.activity_analytic_account_id and line.date_from and line.date_to:
                 committed = line._compute_committed_from_pol()
             elif not committed and line.account_id and line.date_from and line.date_to:
                 committed = line._compute_committed_from_pol()
-            if not achieved and line.task_id and line.task_id.activity_analytic_account_id and line.date_from and line.date_to:
+            if not achieved and task and task.activity_analytic_account_id and line.date_from and line.date_to:
                 achieved = line._compute_achieved_from_analytic()
             elif not achieved and line.account_id and line.date_from and line.date_to:
                 achieved = line._compute_achieved_from_analytic()
@@ -41,8 +42,9 @@ class BudgetLine(models.Model):
         self.ensure_one()
         if not self.date_from or not self.date_to:
             return 0.0
+        task = self.sudo().task_id
         analytic_account = (
-            (self.task_id.activity_analytic_account_id if self.task_id else False)
+            (task.activity_analytic_account_id if task else False)
             or self.account_id
         )
         if not analytic_account:
@@ -73,8 +75,9 @@ class BudgetLine(models.Model):
         self.ensure_one()
         if not self.date_from or not self.date_to:
             return 0.0
+        task = self.sudo().task_id
         analytic_account = (
-            (self.task_id.activity_analytic_account_id if self.task_id else False)
+            (task.activity_analytic_account_id if task else False)
             or self.account_id
         )
         if not analytic_account:
@@ -93,10 +96,11 @@ class BudgetLine(models.Model):
             pol_domain.append(('company_id', '=', self.company_id.id))
         if self.product_id:
             pol_domain.append(('product_id', '=', self.product_id.id))
-        if self.task_id:
-            pol_domain.append(('activity_id', '=', self.task_id.id))
+        task = self.sudo().task_id
+        if task:
+            pol_domain.append(('activity_id', '=', task.id))
         pols = self.env['purchase.order.line'].search(pol_domain)
-        if not self.task_id:
+        if not task:
             # No task: filter by analytic_distribution containing our account_id
             pols = pols.filtered(
                 lambda p: p.analytic_distribution and str(analytic_account.id) in (p.analytic_distribution or {})

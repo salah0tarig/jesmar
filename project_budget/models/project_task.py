@@ -7,6 +7,12 @@ from odoo.exceptions import ValidationError
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
+    budget_line_ids = fields.One2many(
+        'budget.line',
+        'task_id',
+        string='Budget Lines',
+    )
+
     outcome_id = fields.Many2one(
         'account.analytic.account',
         string='Outcome',
