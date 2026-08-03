@@ -39,7 +39,7 @@ class HrPayslip(models.Model):
                 payslip.employer_cost = payslip.gross_wage + si + mi
 
     def _get_total_employee_cost_amount(self):
-        """Total Employee Cost (= contract total_staff_cost)."""
+        """Total Employee Cost (= contract total_staff_cost). Display / allocation base only."""
         self.ensure_one()
         slip_id = self._origin.id or self.id
         if slip_id:
@@ -105,12 +105,14 @@ class HrPayslip(models.Model):
             "expense_depreciation",
         )
 
-    def _split_staff_cost_line_by_allocations(self, line_vals_list, allocations):
-        """Split Total Employee Cost expense debit by budget allocation %."""
+    def _split_expense_line_by_allocations(self, line_vals_list, allocations):
+        """Split an existing expense debit into allocation lines.
+
+        Debit/credit totals are preserved (base_debit × %); only analytic/product change.
+        """
         precision = self.env["decimal.precision"].precision_get("Payroll")
         allocs = allocations.sorted("id")
-        total_pct = sum(allocs.mapped("percentage"))
-        staff_cost = self._get_total_employee_cost_amount()
+        total_pct = sum(allocs.mapped("percentage")) or 100.0
         result = []
         for line_vals in line_vals_list:
             base_debit = line_vals.get("debit") or 0.0
@@ -122,11 +124,11 @@ class HrPayslip(models.Model):
                 is_last = idx == len(allocs) - 1
                 if is_last:
                     split_debit = float_round(
-                        staff_cost - running_debit, precision_digits=precision
+                        base_debit - running_debit, precision_digits=precision
                     )
                 else:
                     split_debit = float_round(
-                        staff_cost * alloc.percentage / total_pct,
+                        base_debit * alloc.percentage / total_pct,
                         precision_digits=precision,
                     )
                     running_debit += split_debit
@@ -144,12 +146,15 @@ class HrPayslip(models.Model):
         return result or line_vals_list
 
     def _prepare_line_values(self, line, account, date, debit, credit):
+        """Leave the journal entry identical to standard Odoo when there are no allocations."""
         line_vals_list = super()._prepare_line_values(line, account, date, debit, credit)
-        if line.code != STAFF_COST_RULE_CODE or debit <= 0:
-            return line_vals_list
-        if not self._is_expense_account(account):
-            return line_vals_list
         allocations = self._get_effective_salary_allocations()
         if not allocations:
             return line_vals_list
-        return self._split_staff_cost_line_by_allocations(line_vals_list, allocations)
+
+        # STAFF_COST is display/base only — do not post it when applying budget splits.
+        if line.code == STAFF_COST_RULE_CODE:
+            return []
+        if debit <= 0 or not self._is_expense_account(account):
+            return line_vals_list
+        return self._split_expense_line_by_allocations(line_vals_list, allocations)

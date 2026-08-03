@@ -9,8 +9,9 @@
                 <page string="Salary budget allocation" name="salary_budget_allocation"
                       groups="hr.group_hr_manager">
                     <p class="text-muted">
-                        Set an expense Debit Account on the «Total Employee Cost» salary rule.
-                        Budget allocation splits that single debit by Total Employee Cost × %.
+                        Optional. If empty (and no lines on the payslip), the journal entry
+                        stays standard Odoo. When set, expense debits are split by % for
+                        budget analytic/product only — debit/credit totals unchanged.
                     </p>
                     <field name="version_id" invisible="1"/>
                     <field name="salary_allocation_ids"
@@ -49,8 +50,9 @@
                             class="btn-secondary mb-2"
                             invisible="state != 'draft'"/>
                     <p class="text-muted">
-                        Amounts = Total Employee Cost × allocation %.
-                        Applied on the «Total Employee Cost» expense debit when the payslip is posted.
+                        Leave empty to keep a normal Odoo journal entry (uses employee
+                        allocations only if set there). When set, expense debits are split by %
+                        without changing debit/credit totals.
                     </p>
                     <field name="salary_allocation_ids"
                            readonly="state != 'draft'"

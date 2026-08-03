@@ -14,6 +14,7 @@ Main Features:
 - Manage basic salary
 - Employer SI/MI on payslip
 - Salary budget allocation on employee record → payslip journal entry (budget achieved)
+  without changing standard payroll debit/credit totals
 
 Use Case:
 ---------
@@ -25,7 +26,7 @@ without full payroll complexity.
     'website': "https://www.yourcompany.com",
 
     'category': 'Human Resources',
-    'version': '19.0.3.0.6',
+    'version': '19.0.3.0.8',
 
     'depends': [
         'base',
