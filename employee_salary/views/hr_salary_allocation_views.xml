@@ -9,9 +9,9 @@
                 <page string="Salary budget allocation" name="salary_budget_allocation"
                       groups="hr.group_hr_manager">
                     <p class="text-muted">
-                        Optional. If empty (and no lines on the payslip), the journal entry
-                        stays standard Odoo. When set, expense debits are split by % for
-                        budget analytic/product only — debit/credit totals unchanged.
+                        When payroll has payable credits only, Total Employee Cost is posted
+                        as the expense debit (not an Adjustment Entry). Allocations split that
+                        debit by % onto budget analytic/product.
                     </p>
                     <field name="version_id" invisible="1"/>
                     <field name="salary_allocation_ids"
@@ -50,9 +50,8 @@
                             class="btn-secondary mb-2"
                             invisible="state != 'draft'"/>
                     <p class="text-muted">
-                        Leave empty to keep a normal Odoo journal entry (uses employee
-                        allocations only if set there). When set, expense debits are split by %
-                        without changing debit/credit totals.
+                        Allocated amount = Total Employee Cost × %. That cost is the expense
+                        debit on the journal entry; allocations only split analytic/product.
                     </p>
                     <field name="salary_allocation_ids"
                            readonly="state != 'draft'"

@@ -2,7 +2,7 @@
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.tools.float_utils import float_compare, float_round
+from odoo.tools.float_utils import float_compare, float_is_zero, float_round
 
 STAFF_COST_RULE_CODE = "STAFF_COST"
 
@@ -39,7 +39,7 @@ class HrPayslip(models.Model):
                 payslip.employer_cost = payslip.gross_wage + si + mi
 
     def _get_total_employee_cost_amount(self):
-        """Total Employee Cost (= contract total_staff_cost). Display / allocation base only."""
+        """Total Employee Cost (= contract total_staff_cost)."""
         self.ensure_one()
         slip_id = self._origin.id or self.id
         if slip_id:
@@ -105,11 +105,16 @@ class HrPayslip(models.Model):
             "expense_depreciation",
         )
 
-    def _split_expense_line_by_allocations(self, line_vals_list, allocations):
-        """Split an existing expense debit into allocation lines.
+    def _get_staff_cost_expense_account(self):
+        """Expense account for Total Employee Cost (rule debit, else Salaries journal default)."""
+        self.ensure_one()
+        staff_line = self.line_ids.filtered(lambda l: l.code == STAFF_COST_RULE_CODE)[:1]
+        if staff_line and staff_line.salary_rule_id.account_debit:
+            return staff_line.salary_rule_id.account_debit
+        return self.struct_id.journal_id.default_account_id
 
-        Debit/credit totals are preserved (base_debit × %); only analytic/product change.
-        """
+    def _split_expense_line_by_allocations(self, line_vals_list, allocations):
+        """Split an expense debit by allocation % (totals preserved)."""
         precision = self.env["decimal.precision"].precision_get("Payroll")
         allocs = allocations.sorted("id")
         total_pct = sum(allocs.mapped("percentage")) or 100.0
@@ -145,16 +150,96 @@ class HrPayslip(models.Model):
                 result.append(split_vals)
         return result or line_vals_list
 
+    def _prepare_staff_cost_expense_vals(self, date, amount, account):
+        """Build move line values for the Total Employee Cost expense debit."""
+        self.ensure_one()
+        staff_line = self.line_ids.filtered(lambda l: l.code == STAFF_COST_RULE_CODE)[:1]
+        rule = staff_line.salary_rule_id if staff_line else self.env["hr.salary.rule"]
+        batch_lines = self.company_id.batch_payroll_move_lines
+        if not batch_lines and rule and rule.employee_move_line:
+            partner = self.employee_id.work_contact_id
+        else:
+            partner = staff_line.partner_id if staff_line else self.env["res.partner"]
+        name = (
+            staff_line.name
+            if staff_line and rule.split_move_lines
+            else (rule.name if rule else _("Total Employee Cost"))
+        )
+        return {
+            "name": name,
+            "partner_id": partner.id if partner else False,
+            "account_id": account.id,
+            "journal_id": self.struct_id.journal_id.id,
+            "date": date,
+            "debit": amount,
+            "credit": 0.0,
+            "analytic_distribution": (
+                rule.analytic_distribution
+                or self.version_id.analytic_distribution
+                if rule
+                else self.version_id.analytic_distribution
+            ),
+            "tax_tag_ids": staff_line.debit_tag_ids.ids if staff_line else [],
+            "tax_ids": [(4, tax_id) for tax_id in account.tax_ids.ids],
+        }
+
+    def _ensure_total_employee_cost_expense(self, new_lines, date):
+        """Post Total Employee Cost as the expense debit instead of Adjustment Entry.
+
+        Only when the missing debit equals Total Employee Cost (typical setup: payable
+        credits only, no salary expense rules). Otherwise leave the move unchanged.
+        """
+        self.ensure_one()
+        precision = self.env["decimal.precision"].precision_get("Payroll")
+        staff_line = self.line_ids.filtered(
+            lambda l: l.code == STAFF_COST_RULE_CODE and not float_is_zero(l.total, precision_digits=precision)
+        )[:1]
+        if not staff_line:
+            return
+
+        # Already posted by standard payroll (rule has debit account).
+        if staff_line.salary_rule_id.account_debit:
+            return
+
+        debit_sum = sum(line.get("debit") or 0.0 for line in new_lines)
+        credit_sum = sum(line.get("credit") or 0.0 for line in new_lines)
+        gap = credit_sum - debit_sum
+        staff_cost = self._get_total_employee_cost_amount()
+        if float_is_zero(staff_cost, precision_digits=precision):
+            return
+        if float_compare(gap, staff_cost, precision_digits=precision) != 0:
+            return
+
+        account = self._get_staff_cost_expense_account()
+        if not account:
+            raise UserError(
+                _(
+                    'Set a Debit Account on the «Total Employee Cost» salary rule, '
+                    'or a default account on the Expense Journal "%s", '
+                    "so payroll can post Total Employee Cost instead of an Adjustment Entry."
+                )
+                % self.struct_id.journal_id.name
+            )
+
+        line_vals_list = [self._prepare_staff_cost_expense_vals(date, staff_cost, account)]
+        allocations = self._get_effective_salary_allocations()
+        if allocations:
+            line_vals_list = self._split_expense_line_by_allocations(line_vals_list, allocations)
+        new_lines.extend(line_vals_list)
+
+    def _prepare_slip_lines(self, date, line_ids):
+        new_lines = super()._prepare_slip_lines(date, line_ids)
+        self._ensure_total_employee_cost_expense(new_lines, date)
+        return new_lines
+
     def _prepare_line_values(self, line, account, date, debit, credit):
-        """Leave the journal entry identical to standard Odoo when there are no allocations."""
+        """When allocations exist, split only the Total Employee Cost expense debit."""
         line_vals_list = super()._prepare_line_values(line, account, date, debit, credit)
         allocations = self._get_effective_salary_allocations()
         if not allocations:
             return line_vals_list
-
-        # STAFF_COST is display/base only — do not post it when applying budget splits.
-        if line.code == STAFF_COST_RULE_CODE:
-            return []
-        if debit <= 0 or not self._is_expense_account(account):
+        if line.code != STAFF_COST_RULE_CODE or debit <= 0:
+            return line_vals_list
+        if not self._is_expense_account(account):
             return line_vals_list
         return self._split_expense_line_by_allocations(line_vals_list, allocations)
