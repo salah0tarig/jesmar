@@ -32,12 +32,16 @@ class BudgetReport(models.Model):
         return SQL(new_code, *query.params)
 
     def _get_aal_query(self, plan_fnames):
-        """Same as Odoo default, add product filter via aml: bl.product_id IS NULL OR aml.product_id = bl.product_id.
-        Matching uses plan fields (bl.account_id = aal.account_id) - ensure budget line has account_id set."""
+        """Same as Odoo default, plus:
+        - product filter via AML
+        - budget journal entries count as achieved even on asset/prepaid accounts
+        """
         query = super()._get_aal_query(plan_fnames)
         from_clause = (
-            "FROM account_analytic_line aal\n         LEFT JOIN account_move_line aml ON aal.move_line_id = aml.id\n         "
-            "LEFT JOIN budget_line bl"
+            "FROM account_analytic_line aal\n"
+            "         LEFT JOIN account_move_line aml ON aal.move_line_id = aml.id\n"
+            "         LEFT JOIN account_move am ON am.id = aml.move_id\n"
+            "         LEFT JOIN budget_line bl"
         )
         orig_from = "FROM account_analytic_line aal\n         LEFT JOIN budget_line bl"
         new_code = query.code.replace(orig_from, from_clause)
@@ -46,7 +50,33 @@ class BudgetReport(models.Model):
         )
         new_code = new_code.replace(
             "LEFT JOIN account_account aa ON aa.id = aal.general_account_id",
-            product_cond + "\n         LEFT JOIN account_account aa ON aa.id = aal.general_account_id"
+            product_cond + "\n         LEFT JOIN account_account aa ON aa.id = aal.general_account_id",
+        )
+        new_code = new_code.replace(
+            "WHEN ba.budget_type = 'expense' THEN (\n"
+            "                           SPLIT_PART(aa.account_type, '_', 1) = 'expense'",
+            "WHEN ba.budget_type = 'expense' THEN (\n"
+            "                           COALESCE(am.is_budget_journal, FALSE)\n"
+            "                           OR SPLIT_PART(aa.account_type, '_', 1) = 'expense'",
+        )
+        new_code = new_code.replace(
+            "AND (SPLIT_PART(aa.account_type, '_', 1) IN ('income', 'expense') OR aa.account_type IS NULL)",
+            "AND (SPLIT_PART(aa.account_type, '_', 1) IN ('income', 'expense')"
+            " OR aa.account_type IS NULL"
+            " OR COALESCE(am.is_budget_journal, FALSE))",
+        )
+        amount_expr = (
+            "CASE WHEN COALESCE(am.is_budget_journal, FALSE) THEN ABS(aal.amount)\n"
+            "                       ELSE aal.amount * CASE WHEN ba.budget_type = 'expense' THEN -1 ELSE 1 END\n"
+            "                  END"
+        )
+        new_code = new_code.replace(
+            "aal.amount * CASE WHEN ba.budget_type = 'expense' THEN -1 ELSE 1 END AS committed",
+            f"{amount_expr} AS committed",
+        )
+        new_code = new_code.replace(
+            "aal.amount * CASE WHEN ba.budget_type = 'expense' THEN -1 ELSE 1 END AS achieved",
+            f"{amount_expr} AS achieved",
         )
         return SQL(new_code, *query.params)
 

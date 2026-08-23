@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Project Budget (Outcome & Output)',
-    'version': '19.0.2.0.7',
+    'version': '19.0.2.1.6',
     'category': 'Accounting/Accounting',
     'summary': 'Project-centric budget with Outcome/Output hierarchy and Activity-driven budget lines',
     'description': """
@@ -58,6 +58,7 @@ Implements a hierarchical budget structure aligned with project management:
         'views/project_project_views.xml',
         'views/purchase_order_line_views.xml',
         'views/hr_expense_views.xml',
+        'views/account_move_views.xml',
     ],
     'demo': [
         'data/project_budget_demo.xml',

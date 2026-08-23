@@ -60,15 +60,30 @@ class BudgetLine(models.Model):
             domain.append('|')
             domain.append(('product_id', '=', self.product_id.id))
             domain.append(('move_line_id.product_id', '=', self.product_id.id))
-        # Expense/income: filter by general account type
+        # Expense/income: filter by general account type.
+        # Budget journal entries count even on asset/prepaid accounts.
         budget_type = (self.budget_analytic_id or self.env['budget.analytic']).budget_type
         if budget_type == 'expense':
-            domain.append(('general_account_id.internal_group', '=', 'expense'))
+            domain.extend([
+                '|',
+                ('move_line_id.move_id.is_budget_journal', '=', True),
+                ('general_account_id.internal_group', '=', 'expense'),
+            ])
         elif budget_type == 'revenue':
-            domain.append(('general_account_id.internal_group', '=', 'income'))
+            domain.extend([
+                '|',
+                ('move_line_id.move_id.is_budget_journal', '=', True),
+                ('general_account_id.internal_group', '=', 'income'),
+            ])
         aal_records = self.env['account.analytic.line'].search(domain)
         sign = -1 if budget_type == 'expense' else 1
-        return sum(aal.amount * sign for aal in aal_records)
+        total = 0.0
+        for aal in aal_records:
+            if aal.move_line_id.move_id.is_budget_journal:
+                total += abs(aal.amount)
+            else:
+                total += aal.amount * sign
+        return total
 
     def _compute_committed_from_pol(self):
         """Fallback: sum uninvoiced amounts from confirmed PO lines. Uses activity_id or account in analytic."""
@@ -385,7 +400,12 @@ class BudgetLine(models.Model):
                 self.task_id = False
           
 
-          
+    def _get_budget_line_analytic_account(self):
+        """Analytic account used for achieved matching (PO, expense, journal entry)."""
+        self.ensure_one()
+        if self.task_id and self.task_id.activity_analytic_account_id:
+            return self.task_id.activity_analytic_account_id
+        return self.account_id
 
     
 
