@@ -1,0 +1,23 @@
+<odoo>
+
+    <record id="view_reject_wizard" model="ir.ui.view">
+        <field name="name">reject.wizard.form</field>
+        <field name="model">procurement.reject.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reject Reason">
+                <group>
+                    <field name="reason"/>
+                </group>
+                <footer>
+                    <button name="action_confirm"
+                            type="object"
+                            string="Confirm"
+                            class="btn-danger"/>
+                    <button string="Cancel"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

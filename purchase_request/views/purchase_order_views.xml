@@ -1,0 +1,43 @@
+<odoo>
+
+<record id="purchase_order_form_inherit_req"
+        model="ir.ui.view">
+
+    <field name="name">purchase.order.form.req</field>
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_form"/>
+    <field name="arch" type="xml">
+
+<xpath expr="//sheet/group/group" position="after">
+
+<group>
+
+<field name="pr_id" readonly="1"/>
+<field name="delivery_location_id"/>
+
+</group>
+
+</xpath>
+
+<xpath expr="//header" position="inside">
+
+
+
+<button name="action_mgmt_approve"
+        type="object"
+        string="Approve"
+        invisible="state != 'to_approve_mgmt'"
+        class="btn-success"/>
+
+<button name="action_mgmt_reject"
+        type="object"
+        string="Reject"
+        invisible="state != 'to_approve_mgmt'"
+        class="btn-danger"/>
+
+</xpath>
+
+    </field>
+</record>
+
+</odoo>

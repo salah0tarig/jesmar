@@ -1,0 +1,144 @@
+<odoo>
+
+
+
+<record id="view_procurement_req_tree" model="ir.ui.view">
+    <field name="name">procurement.requisition.tree</field>
+    <field name="model">procurement.requisition</field>
+    <field name="arch" type="xml">
+
+        <list >
+
+            <field name="name"/>
+            <field name="project_id"  readonly="state != 'draft'"/>
+            <field name="analytic_account_id"  readonly="state != 'draft'"/>
+            <field name="delivery_location_id"  readonly="state != 'draft'"/>
+            <field name="estimated_total"  readonly="state != 'draft'"/>
+            <field name="state"/>
+
+        </list>
+
+    </field>
+</record>
+
+
+<!-- FORM -->
+
+<record id="view_procurement_req_form" model="ir.ui.view">
+    <field name="name">procurement.requisition.form</field>
+    <field name="model">procurement.requisition</field>
+    <field name="arch" type="xml">
+
+<form>
+
+<header>
+
+<button name="action_submit"
+        string="Submit"
+        type="object"
+        class="btn-primary"
+        invisible="state != 'draft'"
+        groups="purchase_request.group_pr_user"/>
+
+<button name="action_budget_approve"
+        string="Budget Approve"
+        type="object"
+        class="btn-success"
+        invisible="state != 'submitted'"
+        groups="purchase_request.group_finance_approval"/>
+
+<button name="action_create_po"
+        string="Create PO"
+        type="object"
+        class="btn-primary"
+        invisible="state != 'budget'"
+        groups="purchase_request.group_procurement_officer"/>
+
+<button name="action_open_reject_wizard"
+        string="Reject"
+        type="object"
+        class="btn-danger"
+        invisible="state != 'submitted' and state != 'po_draft'"/>
+        
+
+
+<field name="state" widget="statusbar"
+       statusbar_visible="draft,submitted,budget,po_draft,po_approved,received,rejected"/>
+<button name="action_view_pos"
+        type="object"
+        class="oe_stat_button"
+        icon="fa-shopping-cart">
+
+    <field name="po_count" widget="statinfo" string="Purchase Orders"/>
+</button>
+</header>
+
+<sheet>
+
+<group >
+<group >
+
+<field name="name"  readonly="True"/>
+<field name="project_id"  readonly="state != 'draft'"/>
+<field name="analytic_account_id"  readonly="state != 'draft'"/>
+<field name="delivery_location_id"  readonly="state != 'draft'"/>
+
+</group>
+
+<group >
+
+<field name="request_user_id"  readonly="state != 'draft'"/>
+<field name="company_id"  readonly="state != 'draft'"/>
+<field name="estimated_total" readonly="1"/>
+
+</group>
+</group>
+
+<notebook>
+
+<page string="Lines"  readonly="state != 'draft'">
+
+<field name="line_ids" decoration-danger="is_over_budget"  readonly="state != 'draft'">
+
+<list editable="bottom">
+<field name="task_id"/>
+<field name="product_id"/>
+<field name="quantity"/>
+<field name="price"/>
+<field name="total" readonly="1"/>
+
+</list>
+
+</field>
+
+</page>
+
+<page string="Reject Info"  readonly="state != 'draft'">
+
+<group>
+<field name="rejected_by"  readonly="state != 'draft'"/>
+<field name="rejected_date"  readonly="state != 'draft'"/>
+<field name="reject_reason"  readonly="state != 'draft'"/>
+</group>
+
+</page>
+
+</notebook>
+
+</sheet>
+
+</form>
+
+    </field>
+</record>
+
+
+<!-- ACTION -->
+
+<record id="action_procurement_request" model="ir.actions.act_window">
+    <field name="name">Purchase Requests</field>
+    <field name="res_model">procurement.requisition</field>
+    <field name="view_mode">list,form</field>
+</record>
+
+</odoo>

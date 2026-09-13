@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_req,access_req,model_procurement_requisition,,1,1,1,1
+access_req_line,access_req_line,model_procurement_requisition_line,,1,1,1,1
+access_pr_reject_wizard,procurement.reject.wizard,model_procurement_reject_wizard,,1,1,1,1
