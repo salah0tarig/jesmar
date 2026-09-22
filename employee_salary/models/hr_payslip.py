@@ -38,6 +38,16 @@ class HrPayslip(models.Model):
             else:
                 payslip.employer_cost = payslip.gross_wage + si + mi
 
+    def _get_payslip_line_total(self, amount, quantity, rate, rule):
+        """Round each line total before it is stored and added to categories.
+
+        Without this, NET uses unrounded category sums while journal items use
+        Monetary-rounded line totals, which commonly leaves a 0.01 imbalance
+        (and a standard payroll «Adjustment Entry»).
+        """
+        total = super()._get_payslip_line_total(amount, quantity, rate, rule)
+        return float_round(total, precision_rounding=self.currency_id.rounding)
+
     def _get_total_employee_cost_amount(self):
         """Total Employee Cost (= contract total_staff_cost)."""
         self.ensure_one()
