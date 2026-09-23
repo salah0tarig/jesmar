@@ -88,6 +88,17 @@ class HrPayslip(models.Model):
         }
         if len(self.company_id) == 1:
             ctx["default_company_id"] = self.company_id.id
+            # Prefer a bank/cash journal with outbound methods so Amount computes.
+            journal = self.env["account.journal"].search(
+                [
+                    *self.env["account.journal"]._check_company_domain(self.company_id),
+                    ("type", "in", ("bank", "cash", "credit")),
+                    ("outbound_payment_method_line_ids", "!=", False),
+                ],
+                limit=1,
+            )
+            if journal:
+                ctx["default_journal_id"] = journal.id
         if len(self) == 1:
             slip = self
             ctx.update({
