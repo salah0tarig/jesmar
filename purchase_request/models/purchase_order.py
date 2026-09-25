@@ -8,8 +8,12 @@ class PurchaseOrder(models.Model):
     # pr_id = fields.Many2one('procurement.requisition' )
     pr_id = fields.Many2one('procurement.requisition',ondelete='set null')
     delivery_location_id = fields.Many2one('stock.location')
-    project_id = fields.Many2one('project.project',string="Project")
-    
+    project_id = fields.Many2one(
+        'project.project',
+        string="Project",
+        bypass_search_access=True,
+        check_company=False,
+    )
     state = fields.Selection(selection_add=[
         ('to_approve_mgmt', 'Waiting Management Approval')
     ])

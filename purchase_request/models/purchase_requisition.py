@@ -9,8 +9,16 @@ class ProcurementRequisition(models.Model):
 
     name = fields.Char(default='New', readonly=True, copy=False)
 
-    project_id = fields.Many2one('project.project',string="Program", tracking=True)
-    
+    project_id = fields.Many2one(
+        'project.project',
+        string="Program",
+        tracking=True,
+        # PR users must open requisitions even when they cannot open the Program
+        # itself (multi-company / followers-only project rules).
+        bypass_search_access=True,
+        check_company=False,
+    )
+
     analytic_account_id = fields.Many2one(
         'account.analytic.account',
         compute='_compute_cost_center',
@@ -72,7 +80,7 @@ class ProcurementRequisition(models.Model):
     @api.depends('project_id')
     def _compute_cost_center(self):
         for rec in self:
-            rec.analytic_account_id = rec.project_id.account_id
+            rec.analytic_account_id = rec.project_id.sudo().account_id
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -248,12 +256,13 @@ class ProcurementRequisition(models.Model):
         """Match budget lines the same way project_budget matches PO lines."""
         if not line.task_id or not line.product_id:
             return self.env['budget.line']
-        acc = line.task_id.activity_analytic_account_id or line.task_id.output_id
+        task = line.task_id.sudo()
+        acc = task.activity_analytic_account_id or task.output_id
         if not acc:
             return self.env['budget.line']
         check_date = self._pr_budget_check_date()
         domain = [
-            '|', ('task_id', '=', line.task_id.id),
+            '|', ('task_id', '=', task.id),
             '&', ('task_id', '=', False), ('account_id', '=', acc.id),
             ('budget_analytic_id.budget_type', '!=', 'revenue'),
             ('budget_analytic_id.state', 'in', ['confirmed', 'done']),
@@ -265,8 +274,9 @@ class ProcurementRequisition(models.Model):
         if company:
             domain.extend(['|', ('company_id', '=', False), ('company_id', '=', company.id)])
         BudgetLine = self.env['budget.line'].sudo()
-        if line.project_id:
-            matches = BudgetLine.search(domain + [('budget_project_id', '=', line.project_id.id)])
+        project = line.project_id.sudo()
+        if project:
+            matches = BudgetLine.search(domain + [('budget_project_id', '=', project.id)])
             if matches:
                 return matches
         return BudgetLine.search(domain)
@@ -433,12 +443,15 @@ class ProcurementRequisitionLine(models.Model):
         related='pr_id.project_id',
         string="Program",
         store=True,
-        readonly=True
+        readonly=True,
+        bypass_search_access=True,
     )
     task_id = fields.Many2one(
         'project.task',
-        domain="[('project_id','=',project_id)]", 
-        string="Activity"
+        domain="[('project_id','=',project_id)]",
+        string="Activity",
+        bypass_search_access=True,
+        check_company=False,
     )
     budget_line_id = fields.Many2one(
         'budget.line',

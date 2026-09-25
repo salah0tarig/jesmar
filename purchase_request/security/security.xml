@@ -49,5 +49,29 @@
         <field name="implied_ids" eval="[(4, ref('group_store_user'))]"/>
     </record>
 
+    <!-- PR users must read Programs linked on requisitions even when they are not
+         project followers (standard "followers only" rule). Multi-company display
+         of project_id is handled via bypass_search_access on the field. -->
+    <record id="project_pr_user_read_rule" model="ir.rule">
+        <field name="name">Project: procurement users can read programs</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('purchase_request.group_pr_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="project_task_pr_user_read_rule" model="ir.rule">
+        <field name="name">Project Task: procurement users can read activities</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('purchase_request.group_pr_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
 
 </odoo>
