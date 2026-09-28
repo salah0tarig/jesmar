@@ -81,24 +81,42 @@ class HrPayslip(models.Model):
             )
         return lines
 
-    def _prepare_register_payment_context(self):
+    def _prepare_register_payment_context(self, payment_lines):
         ctx = {
             "dont_redirect_to_payments": True,
             "hr_payroll_payment_register": True,
         }
+        company = self.company_id[:1]
         if len(self.company_id) == 1:
-            ctx["default_company_id"] = self.company_id.id
-            # Prefer a bank/cash journal with outbound methods so Amount computes.
-            journal = self.env["account.journal"].search(
-                [
-                    *self.env["account.journal"]._check_company_domain(self.company_id),
-                    ("type", "in", ("bank", "cash", "credit")),
-                    ("outbound_payment_method_line_ids", "!=", False),
-                ],
-                limit=1,
-            )
-            if journal:
-                ctx["default_journal_id"] = journal.id
+            ctx["default_company_id"] = company.id
+            # Journal dropdown uses the active companies. If the user is in another
+            # company, Bank/Cash journals of the payslip company show as "No records".
+            if company in self.env.user.company_ids:
+                ctx["allowed_company_ids"] = [company.id]
+            journals = self.env["account.journal"].search([
+                *self.env["account.journal"]._check_company_domain(company),
+                ("type", "in", ("bank", "cash", "credit")),
+            ])
+            payable_journals = journals.filtered("outbound_payment_method_line_ids")
+            if not journals:
+                raise UserError(_(
+                    "No Bank, Cash, or Credit Card journal exists for %(company)s. "
+                    "Pay cannot use the Salaries journal. Create a Bank or Cash journal "
+                    "in Accounting → Configuration → Journals, then try again.",
+                    company=company.display_name,
+                ))
+            if not payable_journals:
+                raise UserError(_(
+                    "Bank/Cash journals exist for %(company)s, but none has an outbound "
+                    "payment method. Open the journal and add one (for example Manual), then try again.",
+                    company=company.display_name,
+                ))
+            ctx["default_journal_id"] = payable_journals[:1].id
+        if payment_lines:
+            residual = abs(sum(payment_lines.mapped("amount_residual_currency")))
+            if payment_lines.currency_id[:1].is_zero(residual):
+                residual = abs(sum(payment_lines.mapped("amount_residual")))
+            ctx["default_amount"] = residual
         if len(self) == 1:
             slip = self
             ctx.update({
@@ -154,4 +172,6 @@ class HrPayslip(models.Model):
         for slip in self:
             payment_lines |= slip._get_salary_payment_move_lines()
 
-        return payment_lines.action_register_payment(ctx=self._prepare_register_payment_context())
+        return payment_lines.action_register_payment(
+            ctx=self._prepare_register_payment_context(payment_lines)
+        )

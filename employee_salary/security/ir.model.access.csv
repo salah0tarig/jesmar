@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_employee_salary_allocation_internal,hr.employee.salary.allocation.internal,model_hr_employee_salary_allocation,base.group_user,1,1,1,1
 access_hr_employee_salary_allocation_user,hr.employee.salary.allocation.user,model_hr_employee_salary_allocation,hr.group_hr_user,1,1,1,1
 access_hr_employee_salary_allocation_manager,hr.employee.salary.allocation.manager,model_hr_employee_salary_allocation,hr.group_hr_manager,1,1,1,1

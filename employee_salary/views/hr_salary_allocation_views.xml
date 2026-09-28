@@ -6,8 +6,7 @@
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
             <xpath expr="//sheet/notebook" position="inside">
-                <page string="Salary budget allocation" name="salary_budget_allocation"
-                      groups="hr.group_hr_manager">
+                <page string="Salary budget allocation" name="salary_budget_allocation">
                     <p class="text-muted">
                         When payroll has payable credits only, Total Employee Cost is posted
                         as the expense debit (not an Adjustment Entry). Allocations split that
@@ -15,8 +14,7 @@
                     </p>
                     <field name="version_id" invisible="1"/>
                     <field name="salary_allocation_ids"
-                           context="{'default_version_id': version_id}"
-                           readonly="not version_id">
+                           context="{'default_version_id': version_id}">
                         <list editable="bottom">
                             <field name="company_id" column_invisible="1"/>
                             <field name="budget_line_id"
