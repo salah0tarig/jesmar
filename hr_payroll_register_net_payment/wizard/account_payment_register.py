@@ -1,10 +1,51 @@
 # -*- coding: utf-8 -*-
 
-from odoo import api, models
+from odoo import api, fields, models
 
 
 class AccountPaymentRegister(models.TransientModel):
     _inherit = "account.payment.register"
+
+    payroll_journal_ids = fields.Many2many(
+        "account.journal",
+        compute="_compute_payroll_journal_ids",
+        string="Payroll payment journals",
+    )
+
+    @api.depends("available_journal_ids", "company_id", "payment_type", "line_ids")
+    def _compute_payroll_journal_ids(self):
+        """Bank/Cash journals for this payslip, ignoring extra journal ACLs.
+
+        Other modules (and the company switcher) can replace the journal
+        domain with an empty list even when Bank/Cash journals exist.
+        """
+        for wizard in self:
+            journals = wizard.available_journal_ids
+            if self.env.context.get("hr_payroll_payment_register"):
+                company_ids = list(self.env.context.get("hr_payroll_payment_company_ids") or [])
+                if wizard.company_id:
+                    company_ids.append(wizard.company_id.id)
+                company_ids = list(dict.fromkeys(company_ids))
+                extra = self.env["account.journal"].search([
+                    ("company_id", "in", company_ids),
+                    ("type", "in", ("bank", "cash", "credit")),
+                ])
+                if wizard.payment_type == "inbound":
+                    with_methods = extra.filtered("inbound_payment_method_line_ids")
+                else:
+                    with_methods = extra.filtered("outbound_payment_method_line_ids")
+                journals |= with_methods or extra
+            wizard.payroll_journal_ids = journals
+
+    @api.depends("available_journal_ids", "payroll_journal_ids")
+    def _compute_journal_id(self):
+        super()._compute_journal_id()
+        if not self.env.context.get("hr_payroll_payment_register"):
+            return
+        for wizard in self:
+            journals = wizard.payroll_journal_ids
+            if journals and wizard.journal_id not in journals:
+                wizard.journal_id = journals[:1]
 
     def _payroll_net_amount(self):
         """Outstanding NET payable, independent of the payment journal."""
