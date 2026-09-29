@@ -81,6 +81,18 @@ class HrPayslip(models.Model):
             )
         return lines
 
+    def _payroll_payment_company_ids(self):
+        """Payslip company and its parents, limited to companies this user may access."""
+        self.ensure_one()
+        allowed = set(self.env.user.company_ids.ids)
+        company_ids = []
+        company = self.company_id
+        while company:
+            if company.id in allowed:
+                company_ids.append(company.id)
+            company = company.parent_id
+        return company_ids
+
     def _prepare_register_payment_context(self, payment_lines):
         ctx = {
             "dont_redirect_to_payments": True,
@@ -89,26 +101,31 @@ class HrPayslip(models.Model):
         company = self.company_id[:1]
         if len(self.company_id) == 1:
             ctx["default_company_id"] = company.id
-            # Journal dropdown uses the active companies. If the user is in another
-            # company, Bank/Cash journals of the payslip company show as "No records".
-            if company in self.env.user.company_ids:
-                ctx["allowed_company_ids"] = [company.id]
-            journals = self.env["account.journal"].search([
-                *self.env["account.journal"]._check_company_domain(company),
+            company_ids = self._payroll_payment_company_ids()
+            ctx["hr_payroll_payment_company_ids"] = company_ids
+            Journal = self.env["account.journal"].with_context(**ctx)
+            journals = Journal.search([
+                ("company_id", "in", company_ids or [company.id]),
                 ("type", "in", ("bank", "cash", "credit")),
             ])
             payable_journals = journals.filtered("outbound_payment_method_line_ids")
+            if not company_ids:
+                raise UserError(_(
+                    "You cannot pay this payslip because you do not have access to company %(company)s. "
+                    "Ask an administrator to add that company on your user, then switch to it if needed.",
+                    company=company.display_name,
+                ))
             if not journals:
                 raise UserError(_(
                     "No Bank, Cash, or Credit Card journal exists for %(company)s. "
-                    "Pay cannot use the Salaries journal. Create a Bank or Cash journal "
-                    "in Accounting → Configuration → Journals, then try again.",
+                    "Pay cannot use Miscellaneous journals such as Salaries. "
+                    "Create a Bank or Cash journal in Accounting → Configuration → Journals.",
                     company=company.display_name,
                 ))
             if not payable_journals:
                 raise UserError(_(
                     "Bank/Cash journals exist for %(company)s, but none has an outbound "
-                    "payment method. Open the journal and add one (for example Manual), then try again.",
+                    "payment method. Open the journal and add one (for example Manual).",
                     company=company.display_name,
                 ))
             ctx["default_journal_id"] = payable_journals[:1].id
