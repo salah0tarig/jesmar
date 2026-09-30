@@ -82,15 +82,15 @@ class HrPayslip(models.Model):
         return lines
 
     def _payroll_payment_company_ids(self):
-        """Payslip company and its parents, limited to companies this user may access."""
-        self.ensure_one()
+        """Payslip companies and their parents, limited to companies this user may access."""
         allowed = set(self.env.user.company_ids.ids)
         company_ids = []
-        company = self.company_id
-        while company:
-            if company.id in allowed:
-                company_ids.append(company.id)
-            company = company.parent_id
+        companies = self.company_id
+        while companies:
+            for company in companies:
+                if company.id in allowed and company.id not in company_ids:
+                    company_ids.append(company.id)
+            companies = companies.parent_id
         return company_ids
 
     def _prepare_register_payment_context(self, payment_lines):
