@@ -10,10 +10,15 @@ class BudgetLine(models.Model):
     @api.depends('account_id', 'task_id', 'task_id.activity_analytic_account_id', 'product_id', 'date_from', 'date_to', 'company_id', 'budget_analytic_id', 'budget_analytic_id.budget_type')
     def _compute_all(self):
         """Same as account_budget_purchase: single read_group from budget.report.
-        Fallback to direct compute when report returns 0 (project hierarchy plan matching can fail)."""
+        Fallback to direct compute when report returns 0 (project hierarchy plan matching can fail).
+
+        Achieved/committed look at journal items and purchase lines. Those reads
+        run as superuser so a normal user can search a budget line without
+        Accounting access.
+        """
         grouped = {
             line: (committed, achieved)
-            for line, committed, achieved in self.env['budget.report']._read_group(
+            for line, committed, achieved in self.env['budget.report'].sudo()._read_group(
                 domain=[('budget_line_id', 'in', self.ids)],
                 groupby=['budget_line_id'],
                 aggregates=['committed:sum', 'achieved:sum'],
@@ -22,15 +27,16 @@ class BudgetLine(models.Model):
         for line in self:
             committed, achieved = grouped.get(line, (0.0, 0.0))
             task = line.sudo().task_id
+            secure_line = line.sudo()
             # Fallback when report returns 0: direct compute (plan matching fails for activity hierarchy)
             if not committed and task and task.activity_analytic_account_id and line.date_from and line.date_to:
-                committed = line._compute_committed_from_pol()
-            elif not committed and line.account_id and line.date_from and line.date_to:
-                committed = line._compute_committed_from_pol()
+                committed = secure_line._compute_committed_from_pol()
+            elif not committed and secure_line.account_id and line.date_from and line.date_to:
+                committed = secure_line._compute_committed_from_pol()
             if not achieved and task and task.activity_analytic_account_id and line.date_from and line.date_to:
-                achieved = line._compute_achieved_from_analytic()
-            elif not achieved and line.account_id and line.date_from and line.date_to:
-                achieved = line._compute_achieved_from_analytic()
+                achieved = secure_line._compute_achieved_from_analytic()
+            elif not achieved and secure_line.account_id and line.date_from and line.date_to:
+                achieved = secure_line._compute_achieved_from_analytic()
             line.committed_amount = committed
             line.achieved_amount = achieved
             line.committed_percentage = line.budget_amount and (committed / line.budget_amount)

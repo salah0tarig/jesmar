@@ -26,7 +26,7 @@ without full payroll complexity.
     'website': "https://www.yourcompany.com",
 
     'category': 'Human Resources',
-    'version': '19.0.3.1.1',
+    'version': '19.0.3.1.3',
 
     'depends': [
         'base',
@@ -38,6 +38,7 @@ without full payroll complexity.
 
     'data': [
         'security/ir.model.access.csv',
+        'security/salary_allocation_security.xml',
         'data/hr_salary_rules_data.xml',
         'views/employee_views_inherit.xml',
         'views/hr_salary_allocation_views.xml',

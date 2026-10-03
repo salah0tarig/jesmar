@@ -19,7 +19,7 @@
                             <field name="company_id" column_invisible="1"/>
                             <field name="budget_line_id"
                                    options="{'no_create': True}"
-                                   domain="[('budget_analytic_id.state', '=', 'confirmed'), ('budget_analytic_id.company_id', '=', company_id)]"/>
+                                   domain="[('budget_analytic_id.state', '=', 'confirmed')]"/>
                             <field name="budget_project_id" optional="show"/>
                             <field name="product_id" optional="show"/>
                             <field name="analytic_account_id" optional="show"/>
@@ -58,7 +58,7 @@
                             <field name="company_id" column_invisible="1"/>
                             <field name="budget_line_id"
                                    options="{'no_create': True}"
-                                   domain="[('budget_analytic_id.state', '=', 'confirmed'), ('budget_analytic_id.company_id', '=', company_id)]"/>
+                                   domain="[('budget_analytic_id.state', '=', 'confirmed')]"/>
                             <field name="budget_project_id" optional="show"/>
                             <field name="product_id" optional="show"/>
                             <field name="analytic_account_id" optional="show"/>

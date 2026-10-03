@@ -33,7 +33,9 @@ class HrEmployeeSalaryAllocation(models.Model):
         string="Budget line",
         required=True,
         ondelete="restrict",
-        domain="[('budget_analytic_id.state', '=', 'confirmed'), ('budget_analytic_id.company_id', '=', company_id)]",
+        bypass_search_access=True,
+        check_company=False,
+        domain="[('budget_analytic_id.state', '=', 'confirmed')]",
     )
     budget_id = fields.Many2one(
         "budget.analytic",
@@ -48,6 +50,7 @@ class HrEmployeeSalaryAllocation(models.Model):
         string="Project",
         store=True,
         readonly=True,
+        bypass_search_access=True,
     )
     product_id = fields.Many2one(
         "product.product",
@@ -55,6 +58,7 @@ class HrEmployeeSalaryAllocation(models.Model):
         string="Product",
         store=True,
         readonly=True,
+        bypass_search_access=True,
     )
     analytic_account_id = fields.Many2one(
         "account.analytic.account",
@@ -62,6 +66,7 @@ class HrEmployeeSalaryAllocation(models.Model):
         compute="_compute_analytic_account_id",
         store=True,
         readonly=True,
+        bypass_search_access=True,
     )
     percentage = fields.Float(
         string="Allocation %",
@@ -133,7 +138,7 @@ class HrEmployeeSalaryAllocation(models.Model):
     )
     def _compute_analytic_account_id(self):
         for rec in self:
-            line = rec.budget_line_id
+            line = rec.budget_line_id.sudo()
             if not line:
                 rec.analytic_account_id = False
                 continue

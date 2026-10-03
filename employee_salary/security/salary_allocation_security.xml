@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Salary budget allocation is used by normal internal users.
+         Keep company and follower limits on write. Read must stay open,
+         otherwise searching Budget line, Project, Product, or Analytic account
+         raises an access error (often on Journal Item, which the budget
+         achieved amount reads). -->
+    <record id="account.account_move_line_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="account.account_move_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="account_budget.budget_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="account_budget.budget_lines_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="analytic.analytic_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="analytic.analytic_line_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="project.project_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="project.task_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+    <record id="product.product_comp_rule" model="ir.rule">
+        <field name="perm_read" eval="False"/>
+    </record>
+
+    <record id="salary_alloc_project_read" model="ir.rule">
+        <field name="name">Salary allocation: internal users can read projects</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="salary_alloc_task_read" model="ir.rule">
+        <field name="name">Salary allocation: internal users can read activities</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="salary_alloc_move_read" model="ir.rule">
+        <field name="name">Salary allocation: internal users can read journal entries</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="salary_alloc_move_line_read" model="ir.rule">
+        <field name="name">Salary allocation: internal users can read journal items</field>
+        <field name="model_id" ref="account.model_account_move_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="salary_alloc_analytic_account_read" model="ir.rule">
+        <field name="name">Salary allocation: internal users can read analytic accounts</field>
+        <field name="model_id" ref="analytic.model_account_analytic_account"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="salary_alloc_analytic_line_read" model="ir.rule">
+        <field name="name">Salary allocation: internal users can read analytic lines</field>
+        <field name="model_id" ref="analytic.model_account_analytic_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>
