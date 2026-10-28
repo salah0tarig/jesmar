@@ -53,19 +53,40 @@ class HrPayslip(models.Model):
 
         return True
 
+    def _get_net_salary_rule(self):
+        """NET rule on the payslip structure (code match is case-insensitive)."""
+        self.ensure_one()
+        return self.struct_id.rule_ids.filtered(
+            lambda r: (r.code or "").strip().upper() == "NET"
+        )[:1]
+
+    def _get_net_credit_account(self):
+        """Credit account for NET, resolved for the payslip company (company-dependent)."""
+        self.ensure_one()
+        net_rule = self._get_net_salary_rule()
+        if not net_rule:
+            return self.env["account.account"]
+        return net_rule.with_company(self.company_id).account_credit
+
     def _get_salary_payment_move_lines(self):
         """Payable lines for this employee's NET salary only (not the whole batch move)."""
         self.ensure_one()
         if not self.move_id:
             raise UserError(_("No journal entry is linked to this payslip."))
 
-        net_rule = self.struct_id.rule_ids.filtered(lambda r: r.code == "NET")[:1]
-        if not net_rule or not net_rule.account_credit:
-            raise UserError(_("Configure a credit account on the NET salary rule."))
+        net_account = self._get_net_credit_account()
+        if not net_account:
+            raise UserError(
+                _(
+                    "Configure a credit account on the NET salary rule "
+                    "for company %(company)s.",
+                    company=self.company_id.display_name,
+                )
+            )
 
         partner = self.employee_id.work_contact_id
         lines = self.move_id.line_ids.filtered(
-            lambda line, acc=net_rule.account_credit, partner=partner: (
+            lambda line, acc=net_account, partner=partner: (
                 line.account_id == acc
                 and line.partner_id == partner
                 and line.account_type == "liability_payable"
@@ -172,11 +193,34 @@ class HrPayslip(models.Model):
             raise UserError(_("You can only register payment for posted journal entries."))
 
         for slip in self:
-            net_rule = slip.struct_id.rule_ids.filtered(lambda r: r.code == "NET")[:1]
-            if not net_rule or not net_rule.account_credit.reconcile:
+            net_rule = slip._get_net_salary_rule()
+            net_account = slip._get_net_credit_account()
+            if not net_rule:
                 raise UserError(
-                    _("The credit account on the NET salary rule is not reconciliable for %s.")
-                    % slip.display_name
+                    _(
+                        "No salary rule with code NET on structure %(structure)s "
+                        "for payslip %(payslip)s.",
+                        structure=slip.struct_id.display_name,
+                        payslip=slip.display_name,
+                    )
+                )
+            if not net_account:
+                raise UserError(
+                    _(
+                        "Set the NET rule credit account for company %(company)s "
+                        "(payslip %(payslip)s). The account field is per company.",
+                        company=slip.company_id.display_name,
+                        payslip=slip.display_name,
+                    )
+                )
+            if not net_account.reconcile:
+                raise UserError(
+                    _(
+                        "The NET credit account %(account)s is not reconciliable "
+                        "for payslip %(payslip)s. Enable Allow Reconciliation on that account.",
+                        account=net_account.display_name,
+                        payslip=slip.display_name,
+                    )
                 )
             bank_accounts = slip.employee_id.sudo().bank_account_ids
             if any(not bank.allow_out_payment for bank in bank_accounts):
