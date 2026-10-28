@@ -8,7 +8,7 @@
     'author': "Huda Abdalla",
     
     'category': 'Uncategorized',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
 
     'depends': [
         'purchase',

@@ -458,15 +458,52 @@ class ProcurementRequisitionLine(models.Model):
         compute='_compute_budget_line',
         store=False
     )
-    product_id = fields.Many2one('product.product')
+    allowed_product_ids = fields.Many2many(
+        'product.product',
+        compute='_compute_allowed_product_ids',
+        string="Allowed Products",
+    )
+    product_id = fields.Many2one(
+        'product.product',
+        domain="[('id', 'in', allowed_product_ids)]",
+    )
     quantity = fields.Float()
     price = fields.Float()
 
     total = fields.Float(compute='_compute_total', store=True)
 
+    def _get_budget_lines_for_activity(self):
+        """Confirmed/done expense budget lines for this line's Activity (+ Program)."""
+        self.ensure_one()
+        if not self.task_id:
+            return self.env['budget.line']
+        domain = [
+            ('task_id', '=', self.task_id.id),
+            ('budget_analytic_id.budget_type', '!=', 'revenue'),
+            ('budget_analytic_id.state', 'in', ['confirmed', 'done']),
+        ]
+        if self.project_id:
+            domain.append(('budget_project_id', '=', self.project_id.id))
+        return self.env['budget.line'].sudo().search(domain)
+
+    @api.depends('task_id', 'project_id')
+    def _compute_allowed_product_ids(self):
+        for rec in self:
+            budgets = rec._get_budget_lines_for_activity()
+            product_ids = set(budgets.mapped('product_id').ids)
+            for budget in budgets:
+                if budget.allowed_product_ids:
+                    product_ids.update(budget.allowed_product_ids.ids)
+            rec.allowed_product_ids = [(6, 0, list(product_ids))]
+
     @api.onchange('product_id')
     def _onchange_product(self):
         self.price = self.product_id.standard_price
+
+    @api.onchange('task_id')
+    def _onchange_task_clear_invalid_product(self):
+        if self.product_id and self.product_id not in self.allowed_product_ids:
+            self.product_id = False
 
     @api.depends('quantity', 'price')
     def _compute_total(self):
@@ -483,27 +520,6 @@ class ProcurementRequisitionLine(models.Model):
             rec.budget_line_id = (
                 rec.pr_id._pick_budget_line_for_pr_line(rec, matches) if matches else False
             )
-
-    @api.onchange('task_id')
-    def _onchange_task_filter_products(self):
-        if not self.task_id:
-            return {'domain': {'product_id': []}}
-
-        domain = [
-            ('task_id', '=', self.task_id.id),
-            ('budget_analytic_id.budget_type', '!=', 'revenue'),
-            ('budget_analytic_id.state', 'in', ['confirmed', 'done']),
-        ]
-        if self.project_id:
-            domain.append(('budget_project_id', '=', self.project_id.id))
-        budgets = self.env['budget.line'].sudo().search(domain)
-        product_ids = set(budgets.mapped('product_id').ids)
-        for budget in budgets:
-            if budget.allowed_product_ids:
-                product_ids.update(budget.allowed_product_ids.ids)
-        if product_ids:
-            return {'domain': {'product_id': [('id', 'in', list(product_ids))]}}
-        return {'domain': {'product_id': []}}  
                 
 class BudgetLine(models.Model):
     _inherit = 'budget.line'
