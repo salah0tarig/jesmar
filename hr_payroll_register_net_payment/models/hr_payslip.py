@@ -105,8 +105,44 @@ class HrPayslip(models.Model):
                 _("No payable salary line with residual amount found on the journal entry.")
             )
 
+        pay_company = payment_lines.company_id[:1]
+        journals = self.env["account.journal"].search([
+            ("company_id", "parent_of", pay_company.id),
+            ("type", "in", ("bank", "cash", "credit")),
+        ])
+        if not journals:
+            archived = self.env["account.journal"].with_context(active_test=False).search([
+                ("company_id", "parent_of", pay_company.id),
+                ("type", "in", ("bank", "cash", "credit")),
+                ("active", "=", False),
+            ])
+            if archived:
+                raise UserError(
+                    _(
+                        "No active Bank/Cash journal for %(company)s. "
+                        "These journals exist but are archived: %(journals)s. "
+                        "Open Accounting → Configuration → Journals and activate one, then Pay again.",
+                        company=pay_company.display_name,
+                        journals=", ".join(archived.mapped("display_name")),
+                    )
+                )
+            raise UserError(
+                _(
+                    "No Bank/Cash journal for %(company)s (company of the salary journal entry). "
+                    "Branch banks from another company cannot pay this entry. "
+                    "Create or activate a Bank journal on %(company)s.",
+                    company=pay_company.display_name,
+                )
+            )
+
+        residual = abs(sum(payment_lines.mapped("amount_residual_currency")))
+        if payment_lines.currency_id[:1].is_zero(residual):
+            residual = abs(sum(payment_lines.mapped("amount_residual")))
+
         ctx = {
-            "default_company_id": payment_lines.company_id[:1].id,
+            "default_company_id": pay_company.id,
+            "default_journal_id": journals[:1].id,
+            "default_amount": residual,
         }
         if len(self) == 1:
             ctx.update({

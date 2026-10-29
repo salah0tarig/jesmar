@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Payroll: register NET salary payment only",
-    "version": "19.0.1.5.1",
+    "version": "19.0.1.5.2",
     "category": "Human Resources/Payroll",
     "summary": "Payslip Pay uses standard payment wizard on payable NET lines only",
     "depends": ["hr_payroll_account"],
