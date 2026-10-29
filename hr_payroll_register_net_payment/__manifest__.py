@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Payroll: register NET salary payment only",
-    "version": "19.0.1.6.0",
+    "version": "19.0.1.6.1",
     "category": "Human Resources/Payroll",
     "summary": "Payslip Pay on NET payable lines; bank journals from all branches",
     "depends": ["hr_payroll_account"],

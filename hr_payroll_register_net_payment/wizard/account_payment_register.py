@@ -7,6 +7,10 @@ from odoo.exceptions import UserError
 class AccountPaymentRegister(models.TransientModel):
     _inherit = "account.payment.register"
 
+    # Allow branch bank journals even when the salary entry is on HQ.
+    journal_id = fields.Many2one(check_company=False)
+    payment_method_line_id = fields.Many2one(check_company=False)
+
     payroll_journal_ids = fields.Many2many(
         "account.journal",
         compute="_compute_payroll_journal_ids",
@@ -17,18 +21,14 @@ class AccountPaymentRegister(models.TransientModel):
         return bool(self.env.context.get("hr_payroll_payment_register"))
 
     def _payroll_branch_company_ids(self):
-        """Companies whose bank journals may be used for payroll Pay.
-
-        Includes every company the user currently has selected that shares the
-        same root as the salary entry (HQ + all branches).
-        """
+        """Companies whose bank journals may be used for payroll Pay."""
         ctx_ids = self.env.context.get("hr_payroll_payment_company_ids")
         if ctx_ids:
             return self.env["res.company"].browse(ctx_ids).exists()
         roots = self.line_ids.company_id.root_id | self.company_id.root_id
         return self.env.companies.filtered(lambda c: c.root_id in roots)
 
-    @api.depends("line_ids", "company_id", "payment_type")
+    @api.depends("line_ids", "can_group_payments", "payment_type")
     def _compute_payroll_journal_ids(self):
         Journal = self.env["account.journal"]
         for wizard in self:
@@ -36,6 +36,9 @@ class AccountPaymentRegister(models.TransientModel):
                 wizard.payroll_journal_ids = wizard.available_journal_ids
                 continue
             companies = wizard._payroll_branch_company_ids()
+            if not companies:
+                wizard.payroll_journal_ids = wizard.available_journal_ids
+                continue
             journals = Journal.search([
                 ("company_id", "in", companies.ids),
                 ("type", "in", ("bank", "cash", "credit")),
@@ -48,13 +51,16 @@ class AccountPaymentRegister(models.TransientModel):
 
     @api.depends("available_journal_ids", "payroll_journal_ids")
     def _compute_journal_id(self):
-        super()._compute_journal_id()
+        # Avoid company check when pre-selecting a branch journal.
+        wizards = self
+        if self._payroll_mode():
+            wizards = self.with_context(tracking_disable=True)
+        super(AccountPaymentRegister, wizards)._compute_journal_id()
         if not self._payroll_mode():
             return
         for wizard in self:
             journals = wizard.payroll_journal_ids
             if journals and wizard.journal_id not in journals:
-                # Prefer a journal of the payslip/branch companies from context order.
                 wizard.journal_id = journals[:1]
 
     @api.depends(
@@ -92,7 +98,6 @@ class AccountPaymentRegister(models.TransientModel):
     def _create_payment_vals_from_wizard(self, batch_result):
         payment_vals = super()._create_payment_vals_from_wizard(batch_result)
         if self._payroll_mode() and self.journal_id:
-            # Payment must belong to the bank journal's branch company.
             payment_vals["company_id"] = self.journal_id.company_id.id
         return payment_vals
 
@@ -103,13 +108,7 @@ class AccountPaymentRegister(models.TransientModel):
         return payment_vals
 
     def _create_payments(self):
-        """Allow paying a HQ salary entry with a branch bank journal.
-
-        Standard Odoo forbids mixing companies. For payroll we create the
-        payment under the journal's branch; if the payable lines are on another
-        company in the same group, mark the payslip paid without cross-company
-        AML reconcile (which Odoo cannot do).
-        """
+        """Allow HQ salary payable lines to be paid from a branch bank journal."""
         if not self._payroll_mode():
             return super()._create_payments()
 
@@ -119,22 +118,23 @@ class AccountPaymentRegister(models.TransientModel):
 
         journal_company = self.journal_id.company_id
         line_companies = self.line_ids.company_id
-        same_company = line_companies <= (journal_company | journal_company.parent_ids)
 
-        # Align wizard company with the journal so check_company accepts it.
-        if self.company_id != journal_company:
-            self.company_id = journal_company
-
-        if same_company and journal_company in line_companies:
+        # Same company (or journal is parent of lines): standard flow.
+        if journal_company in line_companies:
             return super()._create_payments()
 
-        # Cross-branch: create/post payment on the branch, skip foreign reconcile.
         batches = list(self.batches)
         if not batches:
             raise UserError(self.env._("There's nothing left to pay."))
+
         payment_vals = self._create_payment_vals_from_wizard(batches[0])
         payment_vals["company_id"] = journal_company.id
-        payment = self.env["account.payment"].with_company(journal_company).create(payment_vals)
+        payment = (
+            self.env["account.payment"]
+            .with_company(journal_company)
+            .with_context(check_company=False)
+            .create(payment_vals)
+        )
         payment.action_post()
 
         payslips = self.line_ids.move_id.payslip_ids
