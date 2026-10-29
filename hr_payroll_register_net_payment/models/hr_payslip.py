@@ -129,11 +129,26 @@ class HrPayslip(models.Model):
             )
         return lines
 
-    def _payroll_payment_company_ids(self):
-        """Payslip companies and their parents, limited to companies this user may access."""
+    def _payroll_payment_accounting_company(self, payment_lines):
+        """Company of the journal items being paid (may differ from payslip company).
+
+        Example: River Nile payslip posted on the JASMAR Salaries journal → pay
+        must use a JASMAR bank journal, not a River Nile one.
+        """
+        self.ensure_one()
+        if payment_lines:
+            return min(payment_lines.company_id, key=lambda c: len(c.parent_ids))
+        return self.company_id[:1]
+
+    def _payroll_payment_company_ids(self, payment_company=None):
+        """Accounting company and its parents, limited to companies this user may access.
+
+        Walks parents only. Child-branch journals must not be offered when the
+        payable lines belong to the parent company.
+        """
         allowed = set(self.env.user.company_ids.ids)
         company_ids = []
-        companies = self.company_id
+        companies = payment_company or self.company_id
         while companies:
             for company in companies:
                 if company.id in allowed and company.id not in company_ids:
@@ -146,10 +161,10 @@ class HrPayslip(models.Model):
             "dont_redirect_to_payments": True,
             "hr_payroll_payment_register": True,
         }
-        company = self.company_id[:1]
-        if len(self.company_id) == 1:
+        company = self[:1]._payroll_payment_accounting_company(payment_lines)
+        if company:
             ctx["default_company_id"] = company.id
-            company_ids = self._payroll_payment_company_ids()
+            company_ids = self._payroll_payment_company_ids(company)
             ctx["hr_payroll_payment_company_ids"] = company_ids
             Journal = self.env["account.journal"].with_context(**ctx)
             journals = Journal.search([
@@ -167,7 +182,8 @@ class HrPayslip(models.Model):
                 raise UserError(_(
                     "No Bank, Cash, or Credit Card journal exists for %(company)s. "
                     "Pay cannot use Miscellaneous journals such as Salaries. "
-                    "Create a Bank or Cash journal in Accounting → Configuration → Journals.",
+                    "Create a Bank or Cash journal in Accounting → Configuration → Journals "
+                    "for the company of the journal entry (%(company)s).",
                     company=company.display_name,
                 ))
             if not payable_journals:
@@ -176,7 +192,9 @@ class HrPayslip(models.Model):
                     "payment method. Open the journal and add one (for example Manual).",
                     company=company.display_name,
                 ))
-            ctx["default_journal_id"] = payable_journals[:1].id
+            # Prefer a journal of the exact accounting company over a parent.
+            same_company = payable_journals.filtered(lambda j: j.company_id == company)
+            ctx["default_journal_id"] = (same_company or payable_journals)[:1].id
         if payment_lines:
             residual = abs(sum(payment_lines.mapped("amount_residual_currency")))
             if payment_lines.currency_id[:1].is_zero(residual):

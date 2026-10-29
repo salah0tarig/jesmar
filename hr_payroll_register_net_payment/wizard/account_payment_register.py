@@ -14,38 +14,55 @@ class AccountPaymentRegister(models.TransientModel):
 
     @api.depends("available_journal_ids", "company_id", "payment_type", "line_ids")
     def _compute_payroll_journal_ids(self):
-        """Bank/Cash journals for this payslip, ignoring extra journal ACLs.
+        """Bank/Cash journals for the payment company (journal-entry company).
 
-        Other modules (and the company switcher) can replace the journal
-        domain with an empty list even when Bank/Cash journals exist.
+        Only journals of that company and its parents are allowed. Child-branch
+        journals (e.g. River Nile while lines are on JASMAR) cause a company
+        inconsistency on Create Payment.
         """
         for wizard in self:
             journals = wizard.available_journal_ids
             if self.env.context.get("hr_payroll_payment_register"):
+                company = wizard.company_id or wizard.line_ids.company_id[:1]
                 company_ids = list(self.env.context.get("hr_payroll_payment_company_ids") or [])
-                if wizard.company_id:
-                    company_ids.append(wizard.company_id.id)
-                company_ids = list(dict.fromkeys(company_ids))
-                extra = self.env["account.journal"].search([
-                    ("company_id", "in", company_ids),
-                    ("type", "in", ("bank", "cash", "credit")),
-                ])
+                if company:
+                    # Keep only companies that are this company or a parent of it.
+                    allowed_tree = set(
+                        int(p)
+                        for p in (company.parent_path or str(company.id)).split("/")
+                        if p
+                    )
+                    company_ids = [cid for cid in company_ids if cid in allowed_tree] or [company.id]
+                extra = self.env["account.journal"]
+                if company_ids:
+                    extra = self.env["account.journal"].search([
+                        ("company_id", "in", company_ids),
+                        ("type", "in", ("bank", "cash", "credit")),
+                    ])
                 if wizard.payment_type == "inbound":
                     with_methods = extra.filtered("inbound_payment_method_line_ids")
                 else:
                     with_methods = extra.filtered("outbound_payment_method_line_ids")
-                journals |= with_methods or extra
+                journals = (with_methods or extra) or journals
+                # Drop any journal that does not match the payment company check.
+                if company:
+                    journals = journals.filtered(
+                        lambda j, c=company: not j.company_id or j.company_id in c.parent_ids | c
+                    )
             wizard.payroll_journal_ids = journals
 
-    @api.depends("available_journal_ids", "payroll_journal_ids")
+    @api.depends("available_journal_ids", "payroll_journal_ids", "company_id")
     def _compute_journal_id(self):
         super()._compute_journal_id()
         if not self.env.context.get("hr_payroll_payment_register"):
             return
         for wizard in self:
             journals = wizard.payroll_journal_ids
-            if journals and wizard.journal_id not in journals:
-                wizard.journal_id = journals[:1]
+            if not journals:
+                continue
+            if wizard.journal_id not in journals:
+                same_company = journals.filtered(lambda j: j.company_id == wizard.company_id)
+                wizard.journal_id = (same_company or journals)[:1]
 
     def _payroll_net_amount(self):
         """Outstanding NET payable, independent of the payment journal."""
