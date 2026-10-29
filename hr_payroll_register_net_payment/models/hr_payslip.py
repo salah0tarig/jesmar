@@ -68,13 +68,19 @@ class HrPayslip(models.Model):
                 return matched
         return lines
 
-    def action_register_payment(self):
-        """Same as standard payroll Pay, but only on payable NET lines.
+    def _payroll_payment_branch_company_ids(self, payment_lines):
+        """HQ + branch companies the user may pay from (same corporate group)."""
+        roots = (payment_lines.company_id | self.company_id).root_id
+        allowed = self.env.user.company_ids.filtered(lambda c: c.root_id in roots)
+        # Prefer currently selected companies in the switcher; fall back to all allowed.
+        selected = self.env.companies.filtered(lambda c: c.root_id in roots)
+        companies = selected or allowed
+        # Always include payslip companies so branch banks appear even if switcher is HQ-only.
+        companies |= self.company_id | payment_lines.company_id
+        return companies.ids
 
-        Default Odoo passes every journal item. Payroll entries have expense
-        (inbound residual) and payable (outbound residual) together, which
-        raises: cannot register inbound and outbound at the same time.
-        """
+    def action_register_payment(self):
+        """Pay NET payable lines; offer bank journals from all branches in the group."""
         if any(state == "paid" for state in self.mapped("state")):
             raise UserError(_("You can only register payments for unpaid documents."))
         if any(m.state != "posted" for m in self.move_id):
@@ -84,7 +90,6 @@ class HrPayslip(models.Model):
         if any(not bank.allow_out_payment for bank in bank_accounts):
             raise UserError(_("An employee bank account is untrusted"))
 
-        # Standard NET reconcile check (code case-insensitive; account per move company).
         for slip in self:
             net_rule = slip.struct_id.rule_ids.filtered(
                 lambda rule: (rule.code or "").strip().upper() == "NET"
@@ -105,33 +110,17 @@ class HrPayslip(models.Model):
                 _("No payable salary line with residual amount found on the journal entry.")
             )
 
-        pay_company = payment_lines.company_id[:1]
+        company_ids = self._payroll_payment_branch_company_ids(payment_lines)
         journals = self.env["account.journal"].search([
-            ("company_id", "parent_of", pay_company.id),
+            ("company_id", "in", company_ids),
             ("type", "in", ("bank", "cash", "credit")),
         ])
+        journals = journals.filtered("outbound_payment_method_line_ids") or journals
         if not journals:
-            archived = self.env["account.journal"].with_context(active_test=False).search([
-                ("company_id", "parent_of", pay_company.id),
-                ("type", "in", ("bank", "cash", "credit")),
-                ("active", "=", False),
-            ])
-            if archived:
-                raise UserError(
-                    _(
-                        "No active Bank/Cash journal for %(company)s. "
-                        "These journals exist but are archived: %(journals)s. "
-                        "Open Accounting → Configuration → Journals and activate one, then Pay again.",
-                        company=pay_company.display_name,
-                        journals=", ".join(archived.mapped("display_name")),
-                    )
-                )
             raise UserError(
                 _(
-                    "No Bank/Cash journal for %(company)s (company of the salary journal entry). "
-                    "Branch banks from another company cannot pay this entry. "
-                    "Create or activate a Bank journal on %(company)s.",
-                    company=pay_company.display_name,
+                    "No Bank/Cash journal found on the selected companies/branches. "
+                    "Activate or create a bank journal on the branch you pay from."
                 )
             )
 
@@ -139,9 +128,15 @@ class HrPayslip(models.Model):
         if payment_lines.currency_id[:1].is_zero(residual):
             residual = abs(sum(payment_lines.mapped("amount_residual")))
 
+        # Prefer a journal of the payslip branch when available.
+        preferred = journals.filtered(lambda j: j.company_id in self.company_id)[:1]
+
         ctx = {
-            "default_company_id": pay_company.id,
-            "default_journal_id": journals[:1].id,
+            "dont_redirect_to_payments": True,
+            "hr_payroll_payment_register": True,
+            "hr_payroll_payment_company_ids": company_ids,
+            "default_company_id": (preferred.company_id or payment_lines.company_id[:1]).id,
+            "default_journal_id": (preferred or journals)[:1].id,
             "default_amount": residual,
         }
         if len(self) == 1:
