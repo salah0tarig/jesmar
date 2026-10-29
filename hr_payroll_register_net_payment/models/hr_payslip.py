@@ -61,37 +61,64 @@ class HrPayslip(models.Model):
         )[:1]
 
     def _get_net_credit_account(self):
-        """Credit account for NET, resolved for the payslip company (company-dependent)."""
+        """Credit account for NET (company-dependent).
+
+        Tries the payslip company first, then parent companies. Setting the
+        account only under JASMAR must still work for child companies like
+        River Nile when the account itself is shared.
+        """
         self.ensure_one()
         net_rule = self._get_net_salary_rule()
         if not net_rule:
             return self.env["account.account"]
-        return net_rule.with_company(self.company_id).account_credit
+        company = self.company_id
+        while company:
+            account = net_rule.with_company(company).account_credit
+            if account:
+                return account
+            company = company.parent_id
+        return self.env["account.account"]
 
     def _get_salary_payment_move_lines(self):
-        """Payable lines for this employee's NET salary only (not the whole batch move)."""
+        """Payable lines for this employee's NET salary only (not the whole batch move).
+
+        Prefer the posted journal entry (source of truth). The NET rule credit
+        account is only used to narrow lines when it is set for this company.
+        """
         self.ensure_one()
         if not self.move_id:
             raise UserError(_("No journal entry is linked to this payslip."))
 
-        net_account = self._get_net_credit_account()
-        if not net_account:
-            raise UserError(
-                _(
-                    "Configure a credit account on the NET salary rule "
-                    "for company %(company)s.",
-                    company=self.company_id.display_name,
-                )
-            )
-
         partner = self.employee_id.work_contact_id
-        lines = self.move_id.line_ids.filtered(
-            lambda line, acc=net_account, partner=partner: (
-                line.account_id == acc
-                and line.partner_id == partner
-                and line.account_type == "liability_payable"
+        residual_payable = self.move_id.line_ids.filtered(
+            lambda line: (
+                line.account_type == "liability_payable"
+                and not line.currency_id.is_zero(line.amount_residual_currency)
             )
         )
+        lines = residual_payable
+        if partner:
+            partner_lines = residual_payable.filtered(lambda line, p=partner: line.partner_id == p)
+            if partner_lines:
+                lines = partner_lines
+        net_account = self._get_net_credit_account()
+        if net_account:
+            matched = lines.filtered(lambda line, acc=net_account: line.account_id == acc)
+            if matched:
+                lines = matched
+            else:
+                # Fallback: rule account may differ by company; keep payable residuals.
+                matched = residual_payable.filtered(
+                    lambda line, acc=net_account: line.account_id == acc
+                )
+                if matched:
+                    lines = matched
+        if len(lines) > 1:
+            named = lines.filtered(
+                lambda line: (line.name or "").strip().upper().startswith("NET")
+            )
+            if named:
+                lines = named
         if not lines:
             raise UserError(
                 _(
@@ -192,46 +219,27 @@ class HrPayslip(models.Model):
         if not_posted:
             raise UserError(_("You can only register payment for posted journal entries."))
 
+        payment_lines = self.env["account.move.line"]
         for slip in self:
-            net_rule = slip._get_net_salary_rule()
-            net_account = slip._get_net_credit_account()
-            if not net_rule:
-                raise UserError(
-                    _(
-                        "No salary rule with code NET on structure %(structure)s "
-                        "for payslip %(payslip)s.",
-                        structure=slip.struct_id.display_name,
-                        payslip=slip.display_name,
-                    )
-                )
-            if not net_account:
-                raise UserError(
-                    _(
-                        "Set the NET rule credit account for company %(company)s "
-                        "(payslip %(payslip)s). The account field is per company.",
-                        company=slip.company_id.display_name,
-                        payslip=slip.display_name,
-                    )
-                )
-            if not net_account.reconcile:
-                raise UserError(
-                    _(
-                        "The NET credit account %(account)s is not reconciliable "
-                        "for payslip %(payslip)s. Enable Allow Reconciliation on that account.",
-                        account=net_account.display_name,
-                        payslip=slip.display_name,
-                    )
-                )
             bank_accounts = slip.employee_id.sudo().bank_account_ids
             if any(not bank.allow_out_payment for bank in bank_accounts):
                 raise UserError(
                     _("An employee bank account is untrusted for %s.")
                     % slip.employee_id.display_name
                 )
-
-        payment_lines = self.env["account.move.line"]
-        for slip in self:
-            payment_lines |= slip._get_salary_payment_move_lines()
+            lines = slip._get_salary_payment_move_lines()
+            not_reconcile = lines.filtered(lambda line: not line.account_id.reconcile)
+            if not_reconcile:
+                raise UserError(
+                    _(
+                        "Payable account %(account)s on journal entry %(move)s is not "
+                        "reconciliable (payslip %(payslip)s). Enable Allow Reconciliation.",
+                        account=not_reconcile[:1].account_id.display_name,
+                        move=slip.move_id.display_name,
+                        payslip=slip.display_name,
+                    )
+                )
+            payment_lines |= lines
 
         return payment_lines.action_register_payment(
             ctx=self._prepare_register_payment_context(payment_lines)
