@@ -53,6 +53,64 @@ class HrPayslip(models.Model):
 
         return True
 
+    def _get_payroll_payment_lines(self):
+        """Payable residual lines only (outbound). Whole move mixes debit+credit and fails Pay."""
+        partners = self.employee_id.work_contact_id
+        lines = self.move_id.line_ids.filtered(
+            lambda line: (
+                line.account_type == "liability_payable"
+                and not line.currency_id.is_zero(line.amount_residual_currency)
+            )
+        )
+        if partners:
+            matched = lines.filtered(lambda line: line.partner_id in partners)
+            if matched:
+                return matched
+        return lines
+
     def action_register_payment(self):
-        """Use standard Odoo payroll payment register (no custom journal/company logic)."""
-        return super().action_register_payment()
+        """Same as standard payroll Pay, but only on payable NET lines.
+
+        Default Odoo passes every journal item. Payroll entries have expense
+        (inbound residual) and payable (outbound residual) together, which
+        raises: cannot register inbound and outbound at the same time.
+        """
+        if any(state == "paid" for state in self.mapped("state")):
+            raise UserError(_("You can only register payments for unpaid documents."))
+        if any(m.state != "posted" for m in self.move_id):
+            raise UserError(_("You can only register payment for posted journal entries."))
+
+        bank_accounts = self.employee_id.sudo().bank_account_ids
+        if any(not bank.allow_out_payment for bank in bank_accounts):
+            raise UserError(_("An employee bank account is untrusted"))
+
+        # Standard NET reconcile check (code case-insensitive; account per move company).
+        for slip in self:
+            net_rule = slip.struct_id.rule_ids.filtered(
+                lambda rule: (rule.code or "").strip().upper() == "NET"
+            )[:1]
+            company = slip.move_id.company_id or slip.company_id
+            credit = self.env["account.account"]
+            while company and not credit:
+                credit = net_rule.with_company(company).account_credit
+                company = company.parent_id
+            if not credit or not credit.reconcile:
+                raise UserError(
+                    _("The credit account on the NET salary rule is not reconciliable")
+                )
+
+        payment_lines = self._get_payroll_payment_lines()
+        if not payment_lines:
+            raise UserError(
+                _("No payable salary line with residual amount found on the journal entry.")
+            )
+
+        ctx = {
+            "default_company_id": payment_lines.company_id[:1].id,
+        }
+        if len(self) == 1:
+            ctx.update({
+                "default_partner_id": self.employee_id.work_contact_id.id,
+                "default_partner_bank_id": self.employee_id.primary_bank_account_id.id,
+            })
+        return payment_lines.action_register_payment(ctx=ctx)
