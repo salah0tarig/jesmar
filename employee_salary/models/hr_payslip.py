@@ -6,9 +6,32 @@ from odoo.tools.float_utils import float_compare, float_is_zero, float_round
 
 STAFF_COST_RULE_CODE = "STAFF_COST"
 
+# PIT rule condition (Condition Based on = Python Code):
+# result = not payslip._is_last_contract_month()
+PIT_LAST_MONTH_CONDITION = (
+    "# Skip PIT in the last calendar month of the contract\n"
+    "result = not payslip._is_last_contract_month()\n"
+)
+
 
 class HrPayslip(models.Model):
     _inherit = "hr.payslip"
+
+    def _is_last_contract_month(self):
+        """True when this payslip period falls in the contract end month.
+
+        Uses version.contract_date_end (employee Contract «to» date).
+        Open-ended contracts (no end date) never count as last month.
+        """
+        self.ensure_one()
+        end = self.version_id.contract_date_end
+        if not end:
+            return False
+        # Prefer the payslip period start month; fall back to date_to.
+        ref = self.date_from or self.date_to
+        if not ref:
+            return False
+        return (ref.year, ref.month) == (end.year, end.month)
 
     salary_allocation_ids = fields.One2many(
         "hr.employee.salary.allocation",
