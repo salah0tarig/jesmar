@@ -1,4 +1,5 @@
 from . import models
+from . import hr_employee_age
 from . import hr_payslip
 from . import hr_version
 from . import hr_employee_salary_allocation

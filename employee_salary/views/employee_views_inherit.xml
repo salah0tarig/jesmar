@@ -5,6 +5,9 @@
         <field name="model">hr.employee</field>
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//group[@name='hr_birth_group']/div[@name='div_km_home_work']" position="after">
+                <field name="age" invisible="not birthday"/>
+            </xpath>
             <xpath expr="//label[@for='wage']" position="before">
                 <field name="total_staff_cost"/>
                 <field name="social_insurance" readonly="1"/>
