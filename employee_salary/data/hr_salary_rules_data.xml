@@ -12,7 +12,17 @@
         <field name="code">EMP_SI</field>
         <field name="appears_on_payslip" eval="True"/>
         <field name="appears_on_employee_cost_dashboard" eval="True"/>
-        <field name="condition_select">none</field>
+        <field name="condition_select">python</field>
+        <field name="condition_python"><![CDATA[
+# Skip Social Insurance when employee age > 60 on payslip date
+birthday = employee.birthday
+ref = payslip.date_to or payslip.date_from
+if not birthday or not ref:
+    result = True
+else:
+    age = ref.year - birthday.year - ((ref.month, ref.day) < (birthday.month, birthday.day))
+    result = age <= 60
+]]></field>
         <field name="amount_select">code</field>
         <field name="amount_python_compute">
 result = categories['GROSS'] * 0.17

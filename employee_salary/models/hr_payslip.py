@@ -13,6 +13,19 @@ PIT_LAST_MONTH_CONDITION = (
     "result = not payslip._is_last_contract_month()\n"
 )
 
+# Social Insurance (EMP_SI / SOCIAL_INSURANCE): skip when age > 60
+SI_SKIP_OVER_60_CONDITION = (
+    "# Skip Social Insurance when employee age > 60 on payslip date\n"
+    "birthday = employee.birthday\n"
+    "ref = payslip.date_to or payslip.date_from\n"
+    "if not birthday or not ref:\n"
+    "    result = True\n"
+    "else:\n"
+    "    age = ref.year - birthday.year - ("
+    "(ref.month, ref.day) < (birthday.month, birthday.day))\n"
+    "    result = age <= 60\n"
+)
+
 
 class HrPayslip(models.Model):
     _inherit = "hr.payslip"
