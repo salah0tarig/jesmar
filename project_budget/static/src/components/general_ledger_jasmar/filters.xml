@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="project_budget.GeneralLedgerJasmarFilters">
+        <t t-call="account_reports.AccountReportFiltersCustomizable"/>
+
+        <t t-if="hasJasmarHierarchyFilter">
+            <div id="filter_jasmar_hierarchy" class="filter_jasmar_hierarchy">
+                <Dropdown menuClass="'account_report_filter jasmar_hierarchy'">
+                    <button class="btn btn-secondary">
+                        <i class="fa fa-filter me-1"/>
+                        <t t-esc="selectedJasmarHierarchyLabel"/>
+                    </button>
+                    <t t-set-slot="content">
+                        <div class="dropdown-item gap-2 align-items-center">
+                            <label>Project</label>
+                            <MultiRecordSelector t-props="getHierarchyMultiRecordSelectorProps('jasmar_project_ids')"/>
+                        </div>
+                        <div class="dropdown-item gap-2 align-items-center">
+                            <label>Outcome</label>
+                            <MultiRecordSelector t-props="getHierarchyMultiRecordSelectorProps('jasmar_outcome_ids')"/>
+                        </div>
+                        <div class="dropdown-item gap-2 align-items-center">
+                            <label>Output</label>
+                            <MultiRecordSelector t-props="getHierarchyMultiRecordSelectorProps('jasmar_output_ids')"/>
+                        </div>
+                        <div class="dropdown-item gap-2 align-items-center">
+                            <label>Activity</label>
+                            <MultiRecordSelector t-props="getHierarchyMultiRecordSelectorProps('jasmar_activity_ids')"/>
+                        </div>
+                    </t>
+                </Dropdown>
+            </div>
+        </t>
+    </t>
+</templates>

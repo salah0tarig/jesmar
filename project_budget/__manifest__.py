@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Project Budget (Outcome & Output)',
-    'version': '19.0.2.1.7',
+    'version': '19.0.2.2.4',
     'category': 'Accounting/Accounting',
     'summary': 'Project-centric budget with Outcome/Output hierarchy and Activity-driven budget lines',
     'description': """
@@ -45,6 +45,7 @@ Implements a hierarchical budget structure aligned with project management:
         'account_budget',
         'project_account_budget',
         'account_budget_purchase',  # optional: provides committed_amount on budget lines
+        'account_reports',
     ],
     'data': [
         'security/security.xml',
@@ -59,7 +60,14 @@ Implements a hierarchical budget structure aligned with project management:
         'views/purchase_order_line_views.xml',
         'views/hr_expense_views.xml',
         'views/account_move_views.xml',
+        'data/general_ledger_jasmar_report.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'project_budget/static/src/components/general_ledger_jasmar/filters.js',
+            'project_budget/static/src/components/general_ledger_jasmar/filters.xml',
+        ],
+    },
     'demo': [
         'data/project_budget_demo.xml',
     ],

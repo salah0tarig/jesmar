@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Copy of General Ledger + Project > Outcome > Output > Activity filter/hierarchy -->
+    <record id="general_ledger_jasmar_report" model="account.report">
+        <field name="name">General Ledger Jasmer</field>
+        <field name="filter_journals" eval="True"/>
+        <field name="filter_analytic" eval="True"/>
+        <field name="filter_show_draft" eval="True"/>
+        <field name="filter_period_comparison" eval="False"/>
+        <field name="filter_multi_company">selector</field>
+        <field name="filter_unfold_all" eval="True"/>
+        <field name="filter_hide_0_lines">never</field>
+        <!-- Year by default so first open shows data without hierarchy filter -->
+        <field name="default_opening_date_filter">this_year</field>
+        <field name="load_more_limit" eval="80"/>
+        <field name="search_bar" eval="True"/>
+        <field name="custom_handler_model_id" ref="model_account_general_ledger_jasmar_report_handler"/>
+        <field name="column_ids">
+            <record id="general_ledger_jasmar_date" model="account.report.column">
+                <field name="name">Date</field>
+                <field name="expression_label">date</field>
+                <field name="figure_type">date</field>
+            </record>
+            <record id="general_ledger_jasmar_partner" model="account.report.column">
+                <field name="name">Partner</field>
+                <field name="expression_label">partner_name</field>
+                <field name="figure_type">string</field>
+            </record>
+            <record id="general_ledger_jasmar_amount_currency" model="account.report.column">
+                <field name="name">Currency</field>
+                <field name="expression_label">amount_currency</field>
+            </record>
+            <record id="general_ledger_jasmar_debit" model="account.report.column">
+                <field name="name">Debit</field>
+                <field name="expression_label">debit</field>
+            </record>
+            <record id="general_ledger_jasmar_credit" model="account.report.column">
+                <field name="name">Credit</field>
+                <field name="expression_label">credit</field>
+            </record>
+            <record id="general_ledger_jasmar_balance" model="account.report.column">
+                <field name="name">Balance</field>
+                <field name="expression_label">balance</field>
+            </record>
+        </field>
+    </record>
+
+    <record id="action_account_report_general_ledger_jasmar" model="ir.actions.client">
+        <field name="name">General Ledger Jasmer</field>
+        <field name="tag">account_report</field>
+        <field name="path">general-ledger-jasmar</field>
+        <field name="context" eval="{'report_id': ref('general_ledger_jasmar_report')}"/>
+    </record>
+
+    <menuitem
+        id="menu_action_account_report_general_ledger_jasmar"
+        name="General Ledger Jasmer"
+        parent="account_reports.account_reports_audit_menu"
+        action="action_account_report_general_ledger_jasmar"
+        groups="account.group_account_readonly"
+        sequence="12"
+    />
+
+</odoo>
