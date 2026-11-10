@@ -91,16 +91,39 @@
                 padding: 6px 8px;
             }
             .o_voucher_custom .o_vc-table .o_vc-col-gl {
-                width: 10%;
+                width: 12%;
+            }
+            .o_voucher_custom .o_vc-table td.o_vc-gl {
+                white-space: nowrap;
+                word-break: keep-all;
+                overflow-wrap: normal;
             }
             .o_voucher_custom .o_vc-table .o_vc-col-account {
-                width: 20%;
+                width: 22%;
+                word-break: normal;
+                overflow-wrap: break-word;
+                hyphens: none;
+            }
+            .o_voucher_custom .o_vc-table td.o_vc-account {
+                word-break: normal;
+                overflow-wrap: break-word;
+                hyphens: none;
             }
             .o_voucher_custom .o_vc-table .o_vc-col-dept {
-                width: 10%;
+                width: 22%;
+                word-break: normal;
+                overflow-wrap: break-word;
+                hyphens: none;
+                white-space: normal;
+            }
+            .o_voucher_custom .o_vc-table td.o_vc-dept {
+                word-break: normal;
+                overflow-wrap: break-word;
+                hyphens: none;
+                white-space: normal;
             }
             .o_voucher_custom .o_vc-table .o_vc-col-desc {
-                width: 38%;
+                width: 22%;
             }
             .o_voucher_custom .o_vc-section-title td {
                 background-color: #eee;
@@ -210,9 +233,9 @@
                         </tr>
                         <t t-foreach="values['lines']" t-as="line">
                             <tr>
-                                <td t-esc="line['gl_code']"/>
-                                <td t-esc="line['account_name']"/>
-                                <td t-esc="line['dept']"/>
+                                <td class="o_vc-gl" t-esc="line['gl_code']"/>
+                                <td class="o_vc-account" t-esc="line['account_name']"/>
+                                <td class="o_vc-dept" t-esc="line['dept']"/>
                                 <td t-esc="line['description']"/>
                                 <td class="text-end o_vc-amount">
                                     <span t-if="line['debit']" t-out="line['debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>

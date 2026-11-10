@@ -116,7 +116,17 @@
                         width: 22%;
                     }
                     .o_voucher_custom .o_vc-table .o_vc-col-dept {
-                        width: 10%;
+                        width: 26%;
+                        word-break: normal;
+                        overflow-wrap: break-word;
+                        hyphens: none;
+                        white-space: normal;
+                    }
+                    .o_voucher_custom .o_vc-table td.o_vc-dept {
+                        word-break: normal;
+                        overflow-wrap: break-word;
+                        hyphens: none;
+                        white-space: normal;
                     }
                     .o_voucher_custom .o_vc-table .o_vc-col-desc {
                         width: 42%;
@@ -259,7 +269,7 @@
                             <t t-foreach="section['lines']" t-as="line">
                                 <tr>
                                     <td t-esc="line['account_name']"/>
-                                    <td t-esc="line['dept']"/>
+                                    <td class="o_vc-dept" t-esc="line['dept']"/>
                                     <td t-esc="line['description']"/>
                                     <td class="text-end o_vc-amount">
                                         <span t-if="line['debit']" t-out="line['debit']" t-options="{'widget': 'monetary', 'display_currency': o.company_currency_id}"/>

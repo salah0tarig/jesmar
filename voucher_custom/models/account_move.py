@@ -39,7 +39,8 @@ class AccountMove(models.Model):
             account = line.account_id
             rows.append({
                 'gl_code': account.code or '',
-                'account_name': account.display_name or '',
+                # Use name only — display_name repeats the code already shown in GL
+                'account_name': account.name or account.display_name or '',
                 'dept': self._voucher_line_dept(line),
                 'description': line.name or '',
                 'debit': line.debit,
