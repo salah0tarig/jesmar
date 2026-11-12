@@ -1,0 +1,37 @@
+<odoo>
+    <menuitem
+        id="project_menu_analytics"
+        name="Analytics and Budgets"
+        parent="project.menu_main_pm"
+        sequence="99"/>
+    <menuitem
+        id="program_menu_analytic_budget"
+        name="Analytic Budgets"
+        parent="project_menu_analytics"
+        action="account_budget.act_budget_analytic_view"
+        sequence="10"/>
+    <menuitem
+        id="program_menu_budget_analysis"
+        name="Budget Line Analysis"
+        parent="project_menu_analytics"
+        action="project_budget.action_budget_lines_analysis"
+        sequence="20"/>
+    <menuitem
+        id="project_menu_distribution_models"
+        name="Analytic Distribution Models"
+        parent="project_menu_analytics"
+        action="analytic.action_analytic_distribution_model"
+        sequence="30"/>
+    <menuitem
+        id="project_menu_analytic_accounts"
+        name="Analytic Accounts"
+        parent="project_menu_analytics"
+        action="analytic.action_account_analytic_account_form"
+        sequence="40"/>
+    <menuitem
+        id="project_menu_analytic_plans"
+        name="Analytic Plans"
+        parent="project_menu_analytics"
+        action="analytic.account_analytic_plan_action"
+        sequence="50"/>
+</odoo>

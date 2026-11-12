@@ -13,6 +13,42 @@ EXPENSE_APPROVAL_STATE = [
 class HrExpense(models.Model):
     _inherit = "hr.expense"
 
+    def _should_preserve_amounts_on_company_change(self):
+        """Keep price/total when only company changes (do not reload product cost)."""
+        self.ensure_one()
+        origin = self._origin
+        if not origin or not self.company_id or not origin.company_id:
+            return False
+        if origin.company_id == self.company_id:
+            return False
+        if origin.product_id != self.product_id:
+            return False
+        return True
+
+    @api.depends("total_amount", "total_amount_currency")
+    def _compute_price_unit(self):
+        """Do not reset unit price from the new company's product cost on company change."""
+        to_preserve = self.filtered(
+            lambda e: e.state == "draft" and e._should_preserve_amounts_on_company_change()
+        )
+        for expense in to_preserve:
+            expense.price_unit = expense._origin.price_unit
+        remaining = self - to_preserve
+        if remaining:
+            super(HrExpense, remaining)._compute_price_unit()
+
+    @api.depends("quantity", "price_unit", "tax_ids")
+    def _compute_total_amount_currency(self):
+        """Keep total in currency when company changes without changing the product."""
+        to_preserve = self.filtered(
+            lambda e: e.state == "draft" and e._should_preserve_amounts_on_company_change()
+        )
+        for expense in to_preserve:
+            expense.total_amount_currency = expense._origin.total_amount_currency
+        remaining = self - to_preserve
+        if remaining:
+            super(HrExpense, remaining)._compute_total_amount_currency()
+
     payment_mode = fields.Selection(
         selection=[
             ("own_account", _("Employee (to reimburse)")),
