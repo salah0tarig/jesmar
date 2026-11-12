@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Voucher Custom',
-    'version': '19.0.1.2.8',
+    'version': '19.0.1.2.9',
     'category': 'Accounting/Accounting',
     'summary': 'Custom Payment Voucher printout for vendor payments',
     'description': """

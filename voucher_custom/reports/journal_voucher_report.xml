@@ -12,10 +12,10 @@
                 padding-top: 8px;
             }
             .o_report_layout_standard .header {
-                margin-bottom: 4px !important;
+                margin-bottom: 8px !important;
             }
             .o_report_layout_standard .article {
-                padding-top: 0 !important;
+                padding-top: 6px !important;
             }
             .o_voucher_custom .o_vc-main-title {
                 font-size: 15pt;

@@ -6,12 +6,12 @@
         <field name="name">Jesmar Voucher (A4)</field>
         <field name="format">A4</field>
         <field name="orientation">Portrait</field>
-        <field name="margin_top">45</field>
+        <field name="margin_top">58</field>
         <field name="margin_bottom">14</field>
         <field name="margin_left">10</field>
         <field name="margin_right">10</field>
         <field name="header_line" eval="False"/>
-        <field name="header_spacing">34</field>
+        <field name="header_spacing">48</field>
         <field name="disable_shrinking" eval="True"/>
         <field name="dpi">96</field>
     </record>

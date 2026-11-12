@@ -7,19 +7,19 @@
             <t t-set="values" t-value="o._get_payment_voucher_report_values(voucher_type=voucher_type)"/>
             <div class="page o_voucher_custom">
                 <style>
-                    /* Tighter spacing inside standard external layout */
+                    /* Keep body clear of header Tax ID / address */
                     .o_report_layout_standard .header {
-                        margin-bottom: 2px !important;
+                        margin-bottom: 8px !important;
                     }
                     .o_report_layout_standard .article {
-                        padding-top: 0 !important;
+                        padding-top: 6px !important;
                     }
                     .o_voucher_custom {
                         font-size: 10pt;
                         line-height: 1.25;
                         color: #333;
                         margin: 0;
-                        padding-top: 4px;
+                        padding-top: 8px;
                     }
                     .o_voucher_custom .o_vc-main-title {
                         font-size: 14pt;
