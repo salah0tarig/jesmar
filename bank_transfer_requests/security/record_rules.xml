@@ -1,0 +1,36 @@
+<odoo>
+
+    <!-- Requesting Branch -->
+    <record id="rule_btr_branch_user" model="ir.rule">
+        <field name="name">BTR: Requesting Branch</field>
+        <field name="model_id" ref="model_fund_transfer_request"/>
+        <field name="groups"
+               eval="[(4, ref('group_branch_user'))]"/>
+        <field name="domain_force">
+            [('company_id', '=', company_id)]
+        </field>
+    </record>
+
+    <!-- Sending Branch Finance -->
+    <record id="rule_btr_branch_finance" model="ir.rule">
+        <field name="name">BTR: Sending Branch Finance</field>
+        <field name="model_id" ref="model_fund_transfer_request"/>
+        <field name="groups"
+               eval="[(4, ref('group_branch_finance'))]"/>
+        <field name="domain_force">
+            ['|', ('source_company_id', 'in', user.btr_finance_branch_ids.ids), ('destination_company_id', 'in', user.btr_finance_branch_ids.ids)]
+        </field>
+    </record>
+
+    <!-- HQ Finance -->
+    <record id="rule_btr_hq_finance" model="ir.rule">
+        <field name="name">BTR: HQ Finance</field>
+        <field name="model_id" ref="model_fund_transfer_request"/>
+        <field name="groups"
+               eval="[(4, ref('group_hq_finance'))]"/>
+        <field name="domain_force">
+            [('source_company_id', 'in', user.btr_finance_branch_ids.ids)]
+        </field>
+    </record>
+
+</odoo>

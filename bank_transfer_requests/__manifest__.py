@@ -1,0 +1,27 @@
+{
+    "name": "Bank Transfer Requests",
+    "version": "19.0.1.0.0",
+    "summary": "Bank Transfer Request Management",
+    "category": "Accounting",
+    "license": "LGPL-3",
+    "author": "Eng.Huda Abdalla",
+    "depends": [
+        "base",
+        "mail",
+        "account",
+        "account_accountant",
+    ],
+    "data": [
+        "data/sequence.xml",
+        "security/security.xml",
+        "security/ir.model.access.csv",
+        "security/record_rules.xml",
+        "views/btr_reject_wizard_views.xml",
+        "views/btr_send_receipt_wizard_views.xml",
+        "views/fund_transfer_views.xml",
+        "views/transfer_settings_views.xml",
+        "views/res_users_views.xml",
+    ],
+    "application": True,
+    "installable": True,
+}

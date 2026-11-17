@@ -1,0 +1,10 @@
+<odoo>
+  <record id="view_btr_send_wizard_form" model="ir.ui.view">
+    <field name="name">btr.send.wizard.form</field><field name="model">btr.send.wizard</field>
+    <field name="arch" type="xml"><form string="Verify &amp; Send"><group><field name="request_id"/><field name="bank_reference"/></group><footer><button name="action_confirm" type="object" string="Mark Sent" class="btn-primary"/><button special="cancel" string="Cancel"/></footer></form></field>
+  </record>
+  <record id="view_btr_receipt_wizard_form" model="ir.ui.view">
+    <field name="name">btr.receipt.wizard.form</field><field name="model">btr.receipt.wizard</field>
+    <field name="arch" type="xml"><form string="Confirm Receipt"><group><field name="request_id"/><field name="receipt_reference"/></group><footer><button name="action_confirm" type="object" string="Confirm Receipt" class="btn-primary"/><button special="cancel" string="Cancel"/></footer></form></field>
+  </record>
+</odoo>

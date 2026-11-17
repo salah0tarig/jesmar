@@ -1,0 +1,43 @@
+<odoo>
+
+    <record id="view_bank_transfer_settings_form" model="ir.ui.view">
+        <field name="name">jasmar.bank.transfer.settings.form</field>
+        <field name="model">jasmar.bank.transfer.settings</field>
+        <field name="arch" type="xml">
+            <form string="Bank Transfer Settings">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="parent_company_id"/>
+                        <field name="hq_branch_id"
+                               domain="[('parent_id','=',parent_company_id)]"/>
+                    </group>
+                    <group string="Branch Accounting Configuration">
+                        <field name="branch_accounting_ids" nolabel="1">
+                            <list editable="bottom">
+                                <field name="branch_id" domain="[('parent_id','=',parent.parent_company_id)]"/>
+                                <field name="clearing_account_id"/>
+                                <field name="transfer_journal_id" domain="[('company_id','=',branch_id),('type','=','general')]"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_bank_transfer_settings" model="ir.actions.act_window">
+        <field name="name">Bank Transfer Settings</field>
+        <field name="res_model">jasmar.bank.transfer.settings</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="menu_bank_transfer_settings"
+        name="Configuration"
+        parent="menu_fund_transfer_root"
+        action="action_bank_transfer_settings"
+        groups="base.group_system"
+        sequence="20"/>
+
+</odoo>

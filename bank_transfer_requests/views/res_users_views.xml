@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_btr" model="ir.ui.view">
+        <field name="name">res.users.form.bank.transfer</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//page[@name='access_rights']" position="inside">
+
+                <group string="Bank Transfer Finance Configuration"
+                       groups="base.group_system">
+
+                    <field name="btr_finance_branch_ids"
+                           string="Authorized Finance Branches"
+                           widget="many2many_tags"
+                           options="{'no_create': True}"/>
+
+                </group>
+
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

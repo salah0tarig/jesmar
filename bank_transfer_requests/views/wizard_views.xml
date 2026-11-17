@@ -1,0 +1,29 @@
+<odoo>
+  <record id="view_btr_send_wizard_form" model="ir.ui.view">
+    <field name="name">btr.send.wizard.form</field><field name="model">btr.send.wizard</field>
+    <field name="arch" type="xml"><form string="Verify &amp; Send"><group>
+      <field name="request_id"/><field name="bank_reference"/>
+    </group><footer>
+      <button name="action_confirm" type="object" string="Post &amp; Mark Sent" class="btn-primary"/>
+      <button special="cancel" string="Cancel"/>
+    </footer></form></field>
+  </record>
+  <record id="view_btr_receipt_wizard_form" model="ir.ui.view">
+    <field name="name">btr.receipt.wizard.form</field><field name="model">btr.receipt.wizard</field>
+    <field name="arch" type="xml"><form string="Confirm Receipt"><group>
+      <field name="request_id"/><field name="receipt_reference"/>
+    </group><footer>
+      <button name="action_confirm" type="object" string="Confirm &amp; Post Receipt" class="btn-primary"/>
+      <button special="cancel" string="Cancel"/>
+    </footer></form></field>
+  </record>
+  <record id="view_btr_reject_wizard_form" model="ir.ui.view">
+    <field name="name">btr.reject.wizard.form</field><field name="model">btr.reject.wizard</field>
+    <field name="arch" type="xml"><form string="Reject Transfer"><group>
+      <field name="request_id"/><field name="reject_reason"/>
+    </group><footer>
+      <button name="action_confirm" type="object" string="Reject Transfer" class="btn-primary"/>
+      <button special="cancel" string="Cancel"/>
+    </footer></form></field>
+  </record>
+</odoo>

@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_btr_branch_user,btr.branch.user,model_fund_transfer_request,bank_transfer_requests.group_branch_user,1,1,1,0
+access_btr_branch_finance,btr.branch.finance,model_fund_transfer_request,bank_transfer_requests.group_branch_finance,1,1,0,0
+access_btr_hq_finance,btr.hq.finance,model_fund_transfer_request,bank_transfer_requests.group_hq_finance,1,1,0,0
+access_btr_settings,btr.settings,model_jasmar_bank_transfer_settings,base.group_system,1,1,1,1
+access_btr_reject_branch_finance,btr.reject.branch.finance,model_btr_reject_wizard,bank_transfer_requests.group_branch_finance,1,1,1,0
+access_btr_reject_hq_finance,btr.reject.hq.finance,model_btr_reject_wizard,bank_transfer_requests.group_hq_finance,1,1,1,0
+access_btr_branch_accounting_admin,btr.branch.accounting.admin,model_jasmar_bank_transfer_branch_accounting,base.group_system,1,1,1,1
+access_btr_send_finance,btr.send.finance,model_btr_send_wizard,bank_transfer_requests.group_branch_finance,1,1,1,0
+access_btr_send_hq,btr.send.hq,model_btr_send_wizard,bank_transfer_requests.group_hq_finance,1,1,1,0
+access_btr_receipt_finance,btr.receipt.finance,model_btr_receipt_wizard,bank_transfer_requests.group_branch_finance,1,1,1,0
